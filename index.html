@@ -164,7 +164,6 @@
 
     // --- SISTEMA DESFER ---
     function saveToHistory() {
-        // Guardem una còpia profunda de l'estat actual dels grups
         const state = JSON.stringify(currentGroups);
         if (history.length > 0 && history[history.length - 1] === state) return;
         
@@ -175,7 +174,7 @@
 
     function undo() {
         if (history.length <= 1) return;
-        history.pop(); // Treiem l'estat actual
+        history.pop();
         const previousState = JSON.parse(history[history.length - 1]);
         currentGroups = previousState;
         renderGroups();
@@ -219,7 +218,7 @@
             if (!line) continue;
             const separator = line.includes(';') ? ';' : ',';
             const cols = line.match(/(".*?"|[^,;]+|(?<=[,;])(?=[,;])|(?<=[,;])$)/g) || [];
-            const cleanCols = cols.map(c => c.trim().replace(/^"|"$/g, ''));
+            const cleanCols = cols.map(c => c.trim().replace(/^"|$/g, ''));
             students.push(createStudentObject(cleanCols[0], cleanCols[1], cleanCols[2], cleanCols[3], cleanCols[4], cleanCols[5]));
         }
         updateInterface();
@@ -241,7 +240,7 @@
         document.getElementById('counterLabel').innerText = students.length > 0 ? `${students.length} alumnes carregats` : "";
     }
 
-    // --- NOVA LÒGICA D'AGRUPAMENT CORRECCIONADA ---
+    // --- LÒGICA D'AGRUPAMENT ---
     function generateGroups() {
         if (students.length === 0) return;
         
@@ -249,59 +248,71 @@
         const max = parseInt(document.getElementById('maxSize').value);
         const totalAlumnes = students.length;
 
-        // Càlcul matemàtic:
-        // 1. Quants grups de mida "ideal" caben?
         let numGroups = Math.floor(totalAlumnes / ideal);
         let residu = totalAlumnes % ideal;
 
-        // 2. Si hi ha residu, intentem repartir-lo entre els grups existents sense passar del "max"
-        // Si el residu és tan gran que ni repartint arribem a encabir-los tots en el "max", creem un grup extra
         if (residu > 0) {
             let espaiDisponible = numGroups * (max - ideal);
             if (residu > espaiDisponible) {
-                // Hem de crear un grup nou perquè no caben en els actuals fins i tot anant al màxim
                 numGroups++;
             }
         }
 
         if (numGroups === 0) numGroups = 1;
 
-        // Calculem la mida "base" per cada grup per repartir el total el més equitativament possible
-        // però respectant que el mínim tendirà a l'ideal o superior
         const basePerGrup = Math.floor(totalAlumnes / numGroups);
         const extraAlumnes = totalAlumnes % numGroups;
 
         let targetSizes = Array(numGroups).fill(basePerGrup);
         for(let i=0; i<extraAlumnes; i++) targetSizes[i]++;
 
-        // Inicialitzem grups buits
         let groups = Array.from({ length: numGroups }, () => []);
-        let sorted = [...students].sort((a, b) => (b.competence + b.participation) - (a.competence + a.participation));
+        
+        // Calculem les mitjanes globals per l'equilibri
+        const globalAvgComp = students.reduce((acc, s) => acc + s.competence, 0) / students.length;
+        const globalAvgPart = students.reduce((acc, s) => acc + s.participation, 0) / students.length;
+
+        // Ordenem alumnes per "complexitat" (absentisme o moltes restriccions primer)
+        let sorted = [...students].sort((a, b) => {
+            const bRestriccions = b.incompatible.length + (b.absentee ? 5 : 0);
+            const aRestriccions = a.incompatible.length + (a.absentee ? 5 : 0);
+            return bRestriccions - aRestriccions;
+        });
 
         sorted.forEach(student => {
             let scores = groups.map((g, i) => {
                 let score = 0;
                 
-                // Forçar límits de mida calculats
-                if (g.length >= targetSizes[i]) score -= 100000;
+                // Prioritat 0: Mida
+                if (g.length >= targetSizes[i]) return { index: i, score: -1000000 };
                 
-                // Incompatibilitats
-                if (g.some(m => student.incompatible.includes(m.id) || m.incompatible.includes(student.id))) score -= 5000;
+                // Prioritat 1: Incompatibilitats (Crític)
+                const hasIncompatible = g.some(m => student.incompatible.includes(m.id) || m.incompatible.includes(student.id));
+                if (hasIncompatible) score -= 50000;
                 
+                // Prioritat 2: Equilibri (Heterogeneïtat)
+                if (g.length > 0) {
+                    const currentAvgComp = g.reduce((acc, m) => acc + m.competence, 0) / g.length;
+                    const currentAvgPart = g.reduce((acc, m) => acc + m.participation, 0) / g.length;
+                    
+                    // Penalitzem si afegir aquest alumne allunya massa el grup de la mitjana global
+                    const newAvgComp = (g.reduce((acc, m) => acc + m.competence, 0) + student.competence) / (g.length + 1);
+                    const newAvgPart = (g.reduce((acc, m) => acc + m.participation, 0) + student.participation) / (g.length + 1);
+                    
+                    score -= Math.abs(newAvgComp - globalAvgComp) * 500;
+                    score -= Math.abs(newAvgPart - globalAvgPart) * 300;
+                }
+
                 // Equilibri d'absentisme
                 if (student.absentee) {
                     const absCount = g.filter(m => m.absentee).length;
-                    score -= (absCount * 150);
+                    score -= (absCount * 1000); // Evitar concentrar absentistes
                 }
 
-                // Equilibri de nivell
-                if (g.length > 0) {
-                    const avgComp = g.reduce((acc, m) => acc + m.competence, 0) / g.length;
-                    score -= Math.abs(avgComp - student.competence) * 20;
+                // Prioritat 3: Preferències
+                if (g.some(m => student.preferences.includes(m.id) || m.preferences.includes(student.id))) {
+                    score += 200; 
                 }
-
-                // Afinitats
-                if (g.some(m => student.preferences.includes(m.id))) score += 50;
 
                 return { index: i, score: score };
             });
@@ -341,12 +352,15 @@
                 <div class="p-4 space-y-2 min-h-[60px]">`;
             
             group.forEach(student => {
-                const hasConflict = group.some(other => student.incompatible.includes(other.id) || other.incompatible.includes(student.id));
+                const hasIncompatible = group.some(other => student.incompatible.includes(other.id) || other.incompatible.includes(student.id));
                 html += `
                     <div draggable="true" ondragstart="onDragStart(event, '${student.id}', ${gIndex})" ondragend="onDragEnd(event)" 
-                         class="px-4 py-3 rounded-2xl border cursor-move transition-all ${hasConflict ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-100 bg-slate-50'} flex justify-between items-center text-xs font-bold">
-                        <span>${student.id}</span>
-                        ${hasConflict ? '<span>⚠️</span>' : ''}
+                         class="px-4 py-3 rounded-2xl border cursor-move transition-all ${hasIncompatible ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-100 bg-slate-50'} flex justify-between items-center text-xs font-bold">
+                        <div class="flex flex-col">
+                            <span>${student.id}</span>
+                            <span class="text-[9px] opacity-60 font-medium">C:${student.competence} P:${student.participation}</span>
+                        </div>
+                        ${hasIncompatible ? '<span title="Error d\'incompatibilitat">⚠️</span>' : ''}
                     </div>`;
             });
             container.innerHTML = html + `</div>`;
@@ -369,7 +383,7 @@
         if (sIdx > -1) {
             const [student] = currentGroups[from].splice(sIdx, 1);
             currentGroups[to].push(student);
-            saveToHistory(); // Guardem el canvi manual
+            saveToHistory();
             renderGroups();
         }
     }
