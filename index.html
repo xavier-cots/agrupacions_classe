@@ -101,7 +101,7 @@
     let currentGroups = [];
     let history = [];
 
-    const valMap = { "Alt": 3, "Altes": 3, "Mitjà": 2, "Mitjanes": 2, "Baix": 1, "Baixes": 1, "Si": true, "No": false, "SÍ": true, "SÍ": true, "SI": true, "NO": false };
+    const valMap = { "Alt": 3, "Altes": 3, "Mitjà": 2, "Mitjanes": 2, "Baix": 1, "Baixes": 1, "Si": true, "No": false, "SÍ": true, "SI": true, "NO": false };
 
     // --- IMPORTACIÓ ---
     document.getElementById('fileInput').addEventListener('change', e => {
@@ -126,7 +126,7 @@
                 participation: valMap[row.Participacio] || 2,
                 competence: valMap[row.Competencies] || 2,
                 incompatible: row.Incompatible ? String(row.Incompatible).split(/[,;]/).map(x => x.trim()) : [],
-                absentee: valMap[row.Absentista] === true || String(row.Absentista).toLowerCase() === 'si',
+                absentee: valMap[row.Absentista] === true || String(row.Absentista).toLowerCase() === 'si' || String(row.Absentista).toLowerCase() === 'sí',
                 preferences: row.Preferencies ? String(row.Preferencies).split(/[,;]/).map(x => x.trim()) : []
             };
             students.push(s);
@@ -151,29 +151,32 @@
         updateStats();
     }
 
-    // --- LÒGICA D'AGRUPAMENTS MILLORADA ---
+    // --- LÒGICA D'AGRUPAMENTS ---
     function generateGroups() {
         if (students.length === 0) return;
         
         const ideal = parseInt(document.getElementById('idealSize').value) || 4;
         const max = parseInt(document.getElementById('maxSize').value) || 5;
 
-        // Càlcul del nombre òptim de grups per evitar que ningú quedi sol
-        // Preferim grups de 'ideal' i si en sobren, els repartim fins a 'max'
-        let numGroups = Math.floor(students.length / ideal);
+        // Càlcul del nombre de grups ideal basat en la mida ideal
+        let numGroups = Math.round(students.length / ideal);
         if (numGroups === 0) numGroups = 1;
-        
-        // Verifiquem si amb aquest nombre de grups superem el màxim per grup
-        while (numGroups > 1 && (students.length / numGroups) < 2) { 
-            numGroups--; // Evitar grups massa petits (mínim 2 si és possible)
+
+        // Ajustar numGroups per assegurar que no superem el 'max' per grup
+        while (students.length / numGroups > max) {
+            numGroups++;
+        }
+        // Ajustar per assegurar que no quedin alumnes sols (mínim 2 si n'hi ha prou)
+        while (numGroups > 1 && students.length / numGroups < 2) {
+            numGroups--;
         }
         
         let groups = Array.from({length: numGroups}, () => []);
         
-        // Barreja aleatòria inicial
+        // Barreja aleatòria per a regeneració
         let pool = [...students].sort(() => Math.random() - 0.5);
         
-        // Prioritat 1: Incompatibilitats i Absentistes (per repartir-los bé)
+        // Ordenar per dificultat de col·locació (absentistes i incompatibilitats primer)
         pool.sort((a,b) => {
             if (a.absentee !== b.absentee) return b.absentee ? 1 : -1;
             return b.incompatible.length - a.incompatible.length;
@@ -184,7 +187,7 @@
             let minScore = Infinity;
 
             for(let i=0; i<groups.length; i++) {
-                // Regla estricta de mida màxima
+                // No permetre superar la mida màxima si hi ha altres opcions
                 if(groups[i].length >= max) continue;
                 
                 let score = 0;
@@ -193,24 +196,26 @@
                 const hasIncompatible = groups[i].some(m => 
                     student.incompatible.includes(m.id) || m.incompatible.includes(student.id)
                 );
-                if (hasIncompatible) score += 1000;
+                if (hasIncompatible) score += 5000;
 
                 // 2. Heterogeneïtat (Equitat)
-                // Repartir absentistes
-                score += groups[i].filter(m => m.absentee).length * 50;
+                // Repartir absentistes equitativament
+                const absCount = groups[i].filter(m => m.absentee).length;
+                score += absCount * 100;
                 
                 // Balanç de competències i participació
-                const avgComp = groups[i].reduce((acc, m) => acc + m.competence, 0) / (groups[i].length || 1);
-                const avgPart = groups[i].reduce((acc, m) => acc + m.participation, 0) / (groups[i].length || 1);
-                score += Math.abs(avgComp - student.competence) * 5;
-                score += Math.abs(avgPart - student.participation) * 5;
+                const avgComp = groups[i].length ? (groups[i].reduce((acc, m) => acc + m.competence, 0) / groups[i].length) : 2;
+                const avgPart = groups[i].length ? (groups[i].reduce((acc, m) => acc + m.participation, 0) / groups[i].length) : 2;
+                
+                score += Math.abs(avgComp - student.competence) * 10;
+                score += Math.abs(avgPart - student.participation) * 10;
 
-                // 3. Preferències (Si n'hi ha alguna al grup, millor)
+                // 3. Preferències
                 const hasPreference = groups[i].some(m => student.preferences.includes(m.id));
-                if (hasPreference) score -= 10;
+                if (hasPreference) score -= 20;
 
-                // Mantenir grups equilibrats en mida
-                score += groups[i].length * 20;
+                // Mantenir grups equilibrats en volum d'alumnes
+                score += groups[i].length * 50;
 
                 if(score < minScore) {
                     minScore = score;
@@ -218,7 +223,7 @@
                 }
             }
 
-            // Si no hem trobat grup (tots plens), forçar el més buit
+            // Fallback si per alguna raó tots estan "plens" teòricament
             if(bestG === -1) {
                 bestG = groups.indexOf(groups.reduce((a, b) => a.length < b.length ? a : b));
             }
@@ -254,19 +259,23 @@
             listDiv.className = "space-y-2 flex-1";
 
             group.forEach(s => {
-                const hasConflict = group.some(m => s.incompatible.includes(m.id) || m.incompatible.includes(s.id));
+                // Detecció d'incompatibilitat en el grup actual
+                const hasConflict = group.some(m => 
+                    m.id !== s.id && (s.incompatible.includes(m.id) || m.incompatible.includes(s.id))
+                );
+
                 const card = document.createElement('div');
                 card.draggable = true;
                 card.className = `p-3 rounded-xl text-sm font-semibold border transition-all cursor-grab active:cursor-grabbing flex justify-between items-center ${hasConflict ? 'warning-card' : 'bg-white border-slate-100 shadow-sm hover:shadow-md hover:border-indigo-200'}`;
                 
                 card.innerHTML = `
                     <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full ${s.absentee ? 'bg-red-500' : 'bg-emerald-400'}"></div>
-                        <span class="text-slate-700">${s.id}</span>
+                        <div class="w-2.5 h-2.5 rounded-full ${s.absentee ? 'bg-orange-500' : 'bg-emerald-400'}" title="${s.absentee ? 'Absentista' : 'Assistent'}"></div>
+                        <span class="text-slate-700 font-bold">${s.id}</span>
                     </div>
-                    <div class="flex gap-1">
-                        ${s.absentee ? '<span class="text-[8px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-black">ABS</span>' : ''}
-                        ${hasConflict ? '⚠️' : ''}
+                    <div class="flex gap-1 items-center">
+                        ${s.absentee ? '<span class="text-[8px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-black">ABS</span>' : ''}
+                        ${hasConflict ? '<span title="Incompatibilitat detectada" class="text-red-600 font-bold">⚠️</span>' : ''}
                     </div>
                 `;
                 
@@ -303,8 +312,6 @@
     function saveHistory() {
         history.push(JSON.stringify(currentGroups));
         document.getElementById('undoBtn').disabled = history.length <= 1;
-        document.getElementById('undoBtn').classList.toggle('bg-white', history.length > 1);
-        document.getElementById('undoBtn').classList.toggle('text-indigo-600', history.length > 1);
     }
 
     function undo() {
@@ -345,16 +352,12 @@
         document.getElementById('m_abs').checked = false;
         updateStats();
         
-        // Afegir al grup més buit o crear-ne un de nou
+        // Afegir al grup més buit
         if (currentGroups.length === 0) {
             currentGroups.push([newStudent]);
         } else {
             let smallest = currentGroups.reduce((a, b) => a.length < b.length ? a : b);
-            if (smallest.length < parseInt(document.getElementById('maxSize').value)) {
-                smallest.push(newStudent);
-            } else {
-                currentGroups.push([newStudent]);
-            }
+            smallest.push(newStudent);
         }
         
         saveHistory();
@@ -365,12 +368,14 @@
         const data = [
             ["Codi_Alumne", "Participacio", "Competencies", "Incompatible", "Absentista", "Preferencies", "Grup"],
             ["AL-001", "Alt", "Altes", "AL-002", "No", "AL-003", ""],
-            ["AL-002", "Mitjà", "Mitjanes", "AL-001", "Si", "", ""]
+            ["AL-002", "Mitjà", "Mitjanes", "AL-001", "Si", "", ""],
+            ["AL-003", "Baix", "Baixes", "", "No", "", ""],
+            ["AL-004", "Mitjà", "Mitjanes", "", "No", "", ""]
         ];
         const ws = XLSX.utils.aoa_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Alumnat");
-        XLSX.writeFile(wb, "Plantilla_Grups.xlsx");
+        XLSX.writeFile(wb, "Plantilla_Agrupacions.xlsx");
     }
 
     function exportResults() {
@@ -390,8 +395,8 @@
         });
         const ws = XLSX.utils.json_to_sheet(out);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Grups_Generats");
-        XLSX.writeFile(wb, "Exportacio_Grups.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Resultats");
+        XLSX.writeFile(wb, "Grups_Classe_Export.xlsx");
     }
 </script>
 </body>
