@@ -10,6 +10,7 @@
     <style>
         .dragging { opacity: 0.5; transform: scale(0.95); }
         .drop-target { border: 2px dashed #f59e0b !important; background-color: #fffbeb !important; }
+        .upload-drag-over { border-color: #6366f1 !important; background-color: #f0f1ff !important; }
         
         /* Dashboard Layout */
         @media (min-width: 1024px) {
@@ -59,12 +60,12 @@
                     <span class="w-5 h-5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-[10px]">1</span>
                     Importar dades
                 </h2>
-                <div class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-indigo-400 transition-colors cursor-pointer relative group">
+                <div id="dropZone" class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-indigo-400 transition-colors cursor-pointer relative group">
                     <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" class="absolute inset-0 opacity-0 cursor-pointer">
                     <div class="text-indigo-500 group-hover:scale-110 transition-transform mb-2 flex justify-center">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     </div>
-                    <p class="text-xs font-bold text-slate-700">Puja CSV o Excel</p>
+                    <p class="text-xs font-bold text-slate-700">Puja o arrossega CSV/Excel</p>
                 </div>
             </section>
 
@@ -163,10 +164,36 @@
     let currentGroups = [];
     const mapping = { "Alt": 3, "Altes": 3, "Mitjà": 2, "Mitjanes": 2, "Baix": 1, "Baixes": 1, "Si": true, "No": false, "SÍ": true, "SI": true };
 
-    // --- FITXERS ---
-    document.getElementById('fileInput').addEventListener('change', function(e) {
+    // --- FITXERS I DRAG & DROP ---
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+
+    fileInput.addEventListener('change', handleFileSelect);
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('upload-drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('upload-drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('upload-drag-over');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFile(files[0]);
+        }
+    });
+
+    function handleFileSelect(e) {
         const file = e.target.files[0];
-        if (!file) return;
+        if (file) handleFile(file);
+    }
+
+    function handleFile(file) {
         const reader = new FileReader();
         const extension = file.name.split('.').pop().toLowerCase();
         reader.onload = function(e) {
@@ -175,7 +202,7 @@
         };
         if (extension === 'csv') reader.readAsText(file);
         else reader.readAsArrayBuffer(file);
-    });
+    }
 
     function processExcel(buffer) {
         const workbook = XLSX.read(buffer, { type: 'array' });
@@ -215,29 +242,67 @@
         document.getElementById('counterLabel').innerText = students.length > 0 ? `${students.length} alumnes carregats` : "";
     }
 
-    // --- GRUPS ---
+    // --- GRUPS AMB LÒGICA DE MIDA IDEAL I MÀXIMA ---
     function generateGroups() {
         if (students.length === 0) return;
+        
         const preferred = parseInt(document.getElementById('preferredSize').value);
         const max = parseInt(document.getElementById('maxSize').value);
-        let numGroups = Math.max(1, Math.ceil(students.length / preferred));
+        
+        // Calculem quants grups necessitem realment per respectar la mida ideal
+        // Si students.length / numGroups > max, haurem d'afegir un grup més
+        let numGroups = Math.ceil(students.length / preferred);
+        
+        // Validació: si amb numGroups superem la mida màxima en tots els grups, incrementem numGroups
+        while (students.length / numGroups > max) {
+            numGroups++;
+        }
+
         let groups = Array.from({ length: numGroups }, () => []);
         let sorted = [...students].sort((a, b) => (b.competence + b.participation) - (a.competence + a.participation));
 
         sorted.forEach(student => {
             let scores = groups.map((g, i) => {
                 let score = 0;
-                if (g.some(m => student.incompatible.includes(m.id) || m.incompatible.includes(student.id))) score -= 1000;
-                if (g.length < preferred) score += 100;
-                else if (g.length < max) score += 10;
-                else score -= 500;
-                if (g.some(m => student.preferences.includes(m.id))) score += 40;
-                if (student.absentee) score -= (g.filter(m => m.absentee).length * 15);
-                return { index: i, score: score - (g.length * 5) };
+                
+                // Penalització forta per incompatibilitat
+                if (g.some(m => student.incompatible.includes(m.id) || m.incompatible.includes(student.id))) score -= 2000;
+                
+                // Prioritat: omplir fins a la mida ideal
+                if (g.length < preferred) {
+                    score += 500;
+                } 
+                // Permetre fins a la mida màxima si és necessari
+                else if (g.length < max) {
+                    score += 100;
+                }
+                // Penalització si ja estem al màxim
+                else {
+                    score -= 5000;
+                }
+
+                // Preferències d'afinitat
+                if (g.some(m => student.preferences.includes(m.id))) score += 50;
+                
+                // Equilibri d'absentisme
+                if (student.absentee) {
+                    const absCount = g.filter(m => m.absentee).length;
+                    score -= (absCount * 100);
+                }
+
+                // Equilibri de competències (intentem que la mitjana del grup no s'allunyi de la mitjana de l'alumne)
+                if (g.length > 0) {
+                    const avgComp = g.reduce((acc, m) => acc + m.competence, 0) / g.length;
+                    score -= Math.abs(avgComp - student.competence) * 10;
+                }
+
+                return { index: i, score: score - (g.length * 2) }; // El factor final ajuda a equilibrar quantitats
             });
+
             scores.sort((a, b) => b.score - a.score);
             groups[scores[0].index].push(student);
         });
+
         currentGroups = groups;
         renderGroups();
     }
@@ -296,7 +361,7 @@
         } else generateGroups();
     }
 
-    // --- MODAL FIX ---
+    // --- MODALS ---
     function showResetConfirm() {
         const modal = document.getElementById('customModal');
         modal.classList.add('modal-active');
