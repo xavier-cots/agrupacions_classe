@@ -7,82 +7,112 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .drop-shadow-custom { filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06)); }
-        .conflict-glow { box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); border: 2px solid #ef4444; }
+        .dragging { opacity: 0.5; transform: scale(0.95); }
+        .drop-target { border: 2px dashed #6366f1 !important; background-color: #f5f3ff !important; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans pb-20">
 
 <div id="app" class="max-w-6xl mx-auto p-4 md:p-8">
     <!-- Capçalera -->
-    <header class="mb-8 text-center">
+    <header class="mb-8 text-center relative">
         <h1 class="text-3xl font-bold text-indigo-700 mb-2">Agrupacions de Classe Intel·ligents</h1>
-        <p class="text-slate-500">Configuració personalitzada segons ràtios preferents i excepcions.</p>
+        <p class="text-slate-500">Gestió dinàmica d'alumnat i configuració de grups.</p>
+        <button onclick="resetApp()" class="mt-4 text-xs font-bold text-red-500 hover:text-red-700 uppercase tracking-widest flex items-center gap-1 mx-auto border border-red-200 px-3 py-1 rounded-full hover:bg-red-50 transition-colors">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            Esborrar totes les dades
+        </button>
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <!-- Columna Esquerra: Entrada de Dades -->
+        <!-- Columna Esquerra: Entrada i Gestió -->
         <div class="lg:col-span-1 space-y-6">
+            <!-- Càrrega CSV -->
             <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <span>1. Carregar dades</span>
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span class="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                    Carregar Fitxer
                 </h2>
-                
                 <div class="space-y-4">
                     <div class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:border-indigo-400 transition-colors cursor-pointer relative">
                         <input type="file" id="csvInput" accept=".csv" class="absolute inset-0 opacity-0 cursor-pointer">
-                        <p class="text-sm text-slate-600">Arrossega un fitxer .csv o fes clic aquí</p>
+                        <p class="text-sm text-slate-600">Puja un .csv</p>
                         <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold">Codi, Participació, Competències, Incompatible, Absentista, Preferències</p>
-                    </div>
-                    
-                    <div class="flex flex-col gap-2">
-                        <button onclick="downloadTemplate()" class="text-xs text-indigo-600 hover:underline text-left">Descarregar plantilla buida</button>
                     </div>
                 </div>
             </section>
 
+            <!-- Afegir Manualment -->
             <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h2 class="text-xl font-semibold mb-4">2. Configuració Grups</h2>
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span class="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">+</span>
+                    Afegir Alumne/a
+                </h2>
+                <div class="space-y-3">
+                    <input type="text" id="manualId" placeholder="Codi Alumne (ex: Marc B. L.)" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="manualPart" class="px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none">
+                            <option value="Mitjà">Part. Mitjana</option>
+                            <option value="Alt">Part. Alta</option>
+                            <option value="Baix">Part. Baixa</option>
+                        </select>
+                        <select id="manualComp" class="px-3 py-2 text-sm border border-slate-300 rounded-lg outline-none">
+                            <option value="Mitjanes">Comp. Mitjanes</option>
+                            <option value="Altes">Comp. Altes</option>
+                            <option value="Baixes">Comp. Baixes</option>
+                        </select>
+                    </div>
+                    <label class="flex items-center gap-2 text-xs text-slate-600">
+                        <input type="checkbox" id="manualAbs"> Absentista?
+                    </label>
+                    <button onclick="addManualStudent()" class="w-full bg-slate-800 hover:bg-black text-white text-xs font-bold py-2 rounded-lg transition-colors">
+                        Afegir a la llista
+                    </button>
+                </div>
+            </section>
+
+            <!-- Configuració -->
+            <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <span class="bg-indigo-100 text-indigo-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                    Configuració Grups
+                </h2>
                 <div class="space-y-4">
-                    <div class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-tight">Mida preferent (Alumnes/Grup)</label>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tight">Preferent</label>
                             <input type="number" id="preferredSize" value="4" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                            <p class="text-[10px] text-slate-400 mt-1 italic">L'objectiu principal de l'algoritme.</p>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-tight">Mida màxima en cas d'excepció</label>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tight">Màxim</label>
                             <input type="number" id="maxSize" value="5" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
-                            <p class="text-[10px] text-slate-400 mt-1 italic">Límit per encabir alumnes sense crear nous grups.</p>
                         </div>
                     </div>
-                    <button onclick="generateGroups()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all transform active:scale-95 shadow-lg shadow-indigo-200">
+                    <button onclick="generateGroups()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-200">
                         Generar Grups
                     </button>
-                    <button id="exportBtn" onclick="exportToCSV()" class="hidden w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all transform active:scale-95 shadow-lg shadow-emerald-200">
+                    <button id="exportBtn" onclick="exportToCSV()" class="hidden w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-emerald-200">
                         Exportar Grups (CSV)
                     </button>
                 </div>
             </section>
         </div>
 
-        <!-- Columna Dreta: Resultats -->
+        <!-- Columna Dreta: Grups -->
         <div class="lg:col-span-2 space-y-6">
             <div id="emptyState" class="bg-white rounded-2xl p-12 text-center border border-slate-200">
-                <div class="text-slate-300 mb-4">
-                    <svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                </div>
-                <h3 class="text-lg font-medium text-slate-600">Sense dades de classe</h3>
-                <p class="text-slate-400">Carrega un fitxer per visualitzar les agrupacions.</p>
+                <p class="text-slate-400">Carrega dades o afegeix alumnes per començar.</p>
+                <p id="counterLabel" class="text-xs text-indigo-500 mt-2 font-bold"></p>
             </div>
 
             <div id="resultsArea" class="hidden">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold text-slate-800">Agrupacions Actuals</h2>
-                    <span id="statsLabel" class="text-sm bg-slate-200 px-3 py-1 rounded-full text-slate-600 font-medium"></span>
+                    <h2 class="text-2xl font-bold text-slate-800">Grups</h2>
+                    <span id="statsLabel" class="text-sm bg-indigo-100 px-3 py-1 rounded-full text-indigo-600 font-medium"></span>
                 </div>
                 <div id="groupsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Els grups es generaran aquí -->
+                    <!-- Grups -->
                 </div>
             </div>
         </div>
@@ -97,19 +127,13 @@
     document.getElementById('csvInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
-        reader.onload = function(e) {
-            const text = e.target.result;
-            processCSV(text);
-        };
+        reader.onload = (e) => processCSV(e.target.result);
         reader.readAsText(file);
     });
 
     function processCSV(text) {
         const lines = text.split('\n');
-        
-        students = [];
         let preassignedGroups = new Map();
 
         for (let i = 1; i < lines.length; i++) {
@@ -117,15 +141,15 @@
             const cols = lines[i].match(/(".*?"|[^,]+|(?<=,)(?=,)|(?<=,)$)/g) || [];
             const cleanCols = cols.map(c => c.trim().replace(/^"|"$/g, ''));
             
-            const student = {
-                id: cleanCols[0],
-                participation: mapping[cleanCols[1]] || 2,
-                competence: mapping[cleanCols[2]] || 2,
-                incompatible: cleanCols[3] ? cleanCols[3].split(/[,;]/).map(id => id.trim()) : [],
-                absentee: mapping[cleanCols[4]] || false,
-                preferences: cleanCols[5] ? cleanCols[5].split(/[,;]/).map(id => id.trim()) : [],
-                assignedGroup: cleanCols[6] ? parseInt(cleanCols[6]) : null
-            };
+            const student = createStudentObject(
+                cleanCols[0], 
+                cleanCols[1], 
+                cleanCols[2], 
+                cleanCols[3], 
+                cleanCols[4], 
+                cleanCols[5],
+                cleanCols[6] ? parseInt(cleanCols[6]) : null
+            );
             students.push(student);
             
             if (student.assignedGroup !== null && !isNaN(student.assignedGroup)) {
@@ -133,183 +157,189 @@
                 preassignedGroups.get(student.assignedGroup).push(student);
             }
         }
-        
-        document.getElementById('emptyState').classList.add('hidden');
-        document.getElementById('resultsArea').classList.remove('hidden');
-
+        updateInterface();
         if (preassignedGroups.size > 0) {
-            currentGroups = Array.from(preassignedGroups.entries())
-                .sort((a, b) => a[0] - b[0])
-                .map(entry => entry[1]);
-            renderGroups(currentGroups);
-            document.getElementById('exportBtn').classList.remove('hidden');
-        } else {
-            generateGroups();
+            currentGroups = Array.from(preassignedGroups.entries()).sort((a,b)=>a[0]-b[0]).map(e=>e[1]);
+            renderGroups();
+        }
+    }
+
+    function createStudentObject(id, part, comp, incomp, abs, pref, group) {
+        return {
+            id: id || "Sense Nom",
+            participation: mapping[part] || 2,
+            competence: mapping[comp] || 2,
+            incompatible: incomp ? incomp.split(/[,;]/).map(x => x.trim()) : [],
+            absentee: mapping[abs] || false,
+            preferences: pref ? pref.split(/[,;]/).map(x => x.trim()) : [],
+            assignedGroup: group
+        };
+    }
+
+    function addManualStudent() {
+        const id = document.getElementById('manualId').value.trim();
+        if (!id) return;
+        
+        const student = createStudentObject(
+            id,
+            document.getElementById('manualPart').value,
+            document.getElementById('manualComp').value,
+            "",
+            document.getElementById('manualAbs').checked ? "Si" : "No",
+            "",
+            null
+        );
+        students.push(student);
+        document.getElementById('manualId').value = "";
+        updateInterface();
+    }
+
+    function updateInterface() {
+        if (students.length > 0) {
+            document.getElementById('counterLabel').innerText = `${students.length} alumnes a la llista`;
         }
     }
 
     function generateGroups() {
-        const preferredSize = parseInt(document.getElementById('preferredSize').value);
-        const maxSize = parseInt(document.getElementById('maxSize').value);
-        
+        const preferred = parseInt(document.getElementById('preferredSize').value);
+        const max = parseInt(document.getElementById('maxSize').value);
         if (students.length === 0) return;
-        if (preferredSize > maxSize) {
-            alert("La mida preferent no pot ser superior a la màxima.");
-            return;
-        }
 
-        // Lògica de càlcul de grups:
-        // Intentem fer grups de la mida preferent.
-        // Si el residu és massa gran per a un sol grup, ajustem.
-        let numGroups = Math.floor(students.length / preferredSize);
-        
-        // Si hi ha residu, mirem si podem absorbir els alumnes en els grups existents sense passar el màxim
-        let remainder = students.length % preferredSize;
-        if (remainder > 0) {
-            const extraCapacityAvailable = numGroups * (maxSize - preferredSize);
-            if (remainder > extraCapacityAvailable) {
-                // Si no caben repartits, necessitem un grup més (que serà més petit que el preferent)
-                numGroups++;
-            }
-        }
-        
-        // Cas especial: si surten 0 grups (per ràtios molt altes en classes molt petites)
-        if (numGroups === 0 && students.length > 0) numGroups = 1;
+        let numGroups = Math.floor(students.length / preferred);
+        let remainder = students.length % preferred;
+        if (remainder > 0 && remainder > (numGroups * (max - preferred))) numGroups++;
+        if (numGroups === 0) numGroups = 1;
 
         let groups = Array.from({ length: numGroups }, () => []);
-        let sortedStudents = [...students].sort((a, b) => 
-            (b.competence + b.participation) - (a.competence + a.participation)
-        );
+        let sorted = [...students].sort((a, b) => (b.competence + b.participation) - (a.competence + a.participation));
 
-        sortedStudents.forEach(student => {
-            let scores = [];
-            for (let i = 0; i < numGroups; i++) {
+        sorted.forEach(student => {
+            let scores = groups.map((g, i) => {
                 let score = 0;
-                
-                // RESTRICCIONS
-                const hasConflict = groups[i].some(member => 
-                    student.incompatible.includes(member.id) || member.incompatible.includes(student.id)
-                );
-                if (hasConflict) score -= 1000;
-                
-                // MIDA (Prioritzar grups que no hagin arribat al preferent)
-                if (groups[i].length < preferredSize) {
-                    score += 100;
-                } else if (groups[i].length < maxSize) {
-                    score += 10; // Permetre fins al màxim però amb menys prioritat
-                } else {
-                    score -= 500; // Penalitzar passar del màxim si hi ha opcions
-                }
-                
-                // Repartiment equilibrat
-                score -= (groups[i].length * 5);
-
-                // AFINITATS
-                const hasFriend = groups[i].some(member => student.preferences.includes(member.id));
-                if (hasFriend) score += 40;
-                
-                // ABSENTISME
-                const numAbsentees = groups[i].filter(m => m.absentee).length;
-                if (student.absentee) score -= (numAbsentees * 15);
-
-                scores.push({ index: i, score: score });
-            }
+                if (g.some(m => student.incompatible.includes(m.id) || m.incompatible.includes(student.id))) score -= 1000;
+                if (g.length < preferred) score += 100;
+                else if (g.length < max) score += 10;
+                else score -= 500;
+                score -= (g.length * 5);
+                if (g.some(m => student.preferences.includes(m.id))) score += 40;
+                if (student.absentee) score -= (g.filter(m => m.absentee).length * 15);
+                return { index: i, score };
+            });
             scores.sort((a, b) => b.score - a.score);
             groups[scores[0].index].push(student);
         });
 
         currentGroups = groups;
-        renderGroups(groups);
-        document.getElementById('exportBtn').classList.remove('hidden');
+        renderGroups();
     }
 
-    function renderGroups(groups) {
+    function renderGroups() {
+        document.getElementById('emptyState').classList.add('hidden');
+        document.getElementById('resultsArea').classList.remove('hidden');
+        document.getElementById('exportBtn').classList.remove('hidden');
+        
         const grid = document.getElementById('groupsGrid');
         grid.innerHTML = '';
         
-        groups.forEach((group, index) => {
-            const groupCard = document.createElement('div');
-            groupCard.className = 'bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm';
+        currentGroups.forEach((group, gIndex) => {
+            const container = document.createElement('div');
+            container.className = 'bg-white border border-slate-200 rounded-2xl shadow-sm transition-all drop-zone';
+            container.dataset.index = gIndex;
             
+            // Drag and Drop Events
+            container.addEventListener('dragover', e => { e.preventDefault(); container.classList.add('drop-target'); });
+            container.addEventListener('dragleave', () => container.classList.remove('drop-target'));
+            container.addEventListener('drop', e => {
+                e.preventDefault();
+                container.classList.remove('drop-target');
+                const studentId = e.dataTransfer.getData('text/plain');
+                const fromGroupIndex = parseInt(e.dataTransfer.getData('fromGroup'));
+                moveStudent(studentId, fromGroupIndex, gIndex);
+            });
+
             let html = `
-                <div class="bg-indigo-50 px-4 py-2 border-b border-indigo-100 flex justify-between items-center">
-                    <h4 class="font-bold text-indigo-700 uppercase text-[10px] tracking-widest">Grup ${index + 1}</h4>
+                <div class="bg-indigo-50 px-4 py-2 border-b border-indigo-100 flex justify-between items-center rounded-t-2xl">
+                    <h4 class="font-bold text-indigo-700 uppercase text-[10px]">Grup ${gIndex + 1}</h4>
                     <span class="text-[10px] text-indigo-400 font-black">${group.length} ALUMNES</span>
                 </div>
-                <div class="p-3 space-y-1.5">
+                <div class="p-3 space-y-2 min-h-[50px]">
             `;
 
             group.forEach(student => {
-                const hasConflict = group.some(other => 
-                    student.incompatible.includes(other.id) || other.incompatible.includes(student.id)
-                );
-                const conflictClass = hasConflict ? 'border-red-200 bg-red-50 text-red-700 font-bold' : 'border-slate-100 bg-slate-50 text-slate-700';
+                const hasConflict = group.some(other => student.incompatible.includes(other.id) || other.incompatible.includes(student.id));
+                const conflictClass = hasConflict ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-100 bg-slate-50 text-slate-700';
 
                 html += `
-                    <div class="px-3 py-1.5 rounded-lg border ${conflictClass} flex justify-between items-center group transition-all hover:border-indigo-200">
-                        <span class="text-sm font-medium">${student.id}</span>
-                        <div class="flex gap-1 items-center">
-                            ${student.absentee ? '<span class="w-1.5 h-1.5 rounded-full bg-amber-400" title="Absentista"></span>' : ''}
-                            ${hasConflict ? '<span title="Conflicte d\'incompatibilitat" class="text-xs">⚠️</span>' : ''}
+                    <div draggable="true" 
+                         ondragstart="onDragStart(event, '${student.id}', ${gIndex})"
+                         ondragend="onDragEnd(event)"
+                         class="px-3 py-2 rounded-lg border cursor-move transition-all active:scale-95 ${conflictClass} flex justify-between items-center shadow-sm">
+                        <span class="text-sm font-semibold">${student.id}</span>
+                        <div class="flex gap-1">
+                            ${student.absentee ? '<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>' : ''}
+                            ${hasConflict ? '<span class="text-[10px]">⚠️</span>' : ''}
                         </div>
                     </div>
                 `;
             });
 
             html += `</div>`;
-            groupCard.innerHTML = html;
-            grid.appendChild(groupCard);
+            container.innerHTML = html;
+            grid.appendChild(container);
         });
 
-        const avg = (students.length / groups.length).toFixed(1);
-        document.getElementById('statsLabel').innerText = `${groups.length} grups (Mitjana: ${avg})`;
+        const avg = (students.length / currentGroups.length).toFixed(1);
+        document.getElementById('statsLabel').innerText = `${currentGroups.length} grups (Mitjana: ${avg})`;
+    }
+
+    // Drag & Drop Logic
+    function onDragStart(e, studentId, fromIndex) {
+        e.dataTransfer.setData('text/plain', studentId);
+        e.dataTransfer.setData('fromGroup', fromIndex);
+        e.target.classList.add('dragging');
+    }
+
+    function onDragEnd(e) {
+        e.target.classList.remove('dragging');
+    }
+
+    function moveStudent(studentId, fromIdx, toIdx) {
+        if (fromIdx === toIdx) return;
+        const studentIdx = currentGroups[fromIdx].findIndex(s => s.id === studentId);
+        if (studentIdx === -1) return;
+        
+        const [student] = currentGroups[fromIdx].splice(studentIdx, 1);
+        currentGroups[toIdx].push(student);
+        renderGroups();
+    }
+
+    function resetApp() {
+        if (confirm("Segur que vols esborrar tots els alumnes i grups?")) {
+            students = [];
+            currentGroups = [];
+            document.getElementById('resultsArea').classList.add('hidden');
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('exportBtn').classList.add('hidden');
+            document.getElementById('counterLabel').innerText = "";
+            document.getElementById('csvInput').value = "";
+        }
     }
 
     function exportToCSV() {
-        let csvContent = "Codi_Alumne,Participacio,Competencies,Incompatible_amb,Absentista,Preferencies,Grup_Assignat\n";
-        
-        currentGroups.forEach((group, groupIndex) => {
-            group.forEach(student => {
-                const row = [
-                    student.id,
-                    getLabelFromScore(student.participation),
-                    getLabelFromScore(student.competence),
-                    student.incompatible.join(';'),
-                    student.absentee ? "Si" : "No",
-                    student.preferences.join(';'),
-                    groupIndex + 1
-                ].map(val => `"${val}"`).join(",");
-                csvContent += row + "\n";
+        let csv = "Codi_Alumne,Participacio,Competencies,Incompatible_amb,Absentista,Preferencies,Grup_Assignat\n";
+        currentGroups.forEach((g, i) => {
+            g.forEach(s => {
+                csv += `"${s.id}","${getLabel(s.participation)}","${getLabel(s.competence)}","${s.incompatible.join(';')}","${s.absentee?'Si':'No'}","${s.preferences.join(';')}","${i+1}"\n`;
             });
         });
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `agrupacions_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", `agrupacions_classe.csv`);
         link.click();
-        document.body.removeChild(link);
     }
 
-    function getLabelFromScore(score) {
-        if (score === 3) return "Alt";
-        if (score === 2) return "Mitjà";
-        return "Baix";
-    }
-
-    function downloadTemplate() {
-        const csvContent = "Codi_Alumne,Participacio,Competencies,Incompatible_amb,Absentista,Preferencies,Grup_Assignat\nALUM_01,Alt,Altes,,No,,\nALUM_02,Baix,Baixes,,No,,\nALUM_03,Mitja,Mitjanes,ALUM_01,No,,";
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", "plantilla_agrupacions.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+    function getLabel(v) { return v === 3 ? "Alt" : v === 2 ? "Mitjà" : "Baix"; }
 </script>
 
 </body>
