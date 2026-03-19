@@ -9,7 +9,6 @@
     <style>
         .dragging { opacity: 0.5; transform: scale(0.95); }
         .drop-target { border: 2px dashed #6366f1 !important; background-color: #f5f3ff !important; }
-        
         .student-card { transition: all 0.2s ease; cursor: grab; }
         .student-card:active { cursor: grabbing; }
         
@@ -24,7 +23,7 @@
             50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
         }
 
-        .scrollable-panel { max-height: 80vh; overflow-y: auto; }
+        .scrollable-panel { max-height: 65vh; overflow-y: auto; }
         .scrollable-panel::-webkit-scrollbar { width: 6px; }
         .scrollable-panel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
@@ -36,7 +35,7 @@
     <header class="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
             <h1 class="text-3xl font-black text-indigo-700">Agrupacions de Classe</h1>
-            <p class="text-slate-500 font-medium">Gestió intel·ligent d'equips heterogenis</p>
+            <p class="text-slate-500 font-medium">Gestió d'equips heterogenis i equilibrats</p>
         </div>
         <div class="flex flex-wrap gap-2 mt-4 md:mt-0">
             <button id="undoBtn" onclick="undo()" disabled class="disabled:opacity-30 flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl font-bold transition-all">
@@ -63,7 +62,7 @@
                 <div id="dropZone" class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-indigo-400 transition-all cursor-pointer relative group bg-slate-50">
                     <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" class="absolute inset-0 opacity-0 cursor-pointer">
                     <svg class="w-10 h-10 text-indigo-400 mx-auto mb-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-                    <p class="text-sm font-bold text-slate-700">Arrastra fins aquí el fitxer o penja fitxer</p>
+                    <p class="text-sm font-bold text-slate-700">arrastra fins aquí el fitxer o penja fitxer</p>
                     <p class="text-[10px] text-slate-400 mt-1 uppercase">Excel (xlsx) o CSV</p>
                 </div>
 
@@ -74,7 +73,7 @@
                         Afegir alumne manualment
                     </button>
                     <div id="manualForm" class="hidden mt-4 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <input type="text" id="m_id" placeholder="Codi/Nom Alumne" class="w-full text-sm p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <input type="text" id="m_id" placeholder="Codi/Nom Alumne" class="w-full text-sm p-2 rounded-lg border border-slate-300">
                         <div class="grid grid-cols-2 gap-2">
                             <select id="m_part" class="text-xs p-2 rounded-lg border border-slate-300">
                                 <option value="Alt">Part: Alt</option>
@@ -90,7 +89,7 @@
                         <input type="text" id="m_incomp" placeholder="Incompatibles (separats per -)" class="w-full text-xs p-2 rounded-lg border border-slate-300">
                         <div class="flex items-center gap-2 px-1">
                             <input type="checkbox" id="m_abs" class="w-4 h-4 text-indigo-600">
-                            <label for="m_abs" class="text-xs font-bold text-slate-600">Absentisme</label>
+                            <label for="m_abs" class="text-xs font-bold text-slate-600">Absentista</label>
                         </div>
                         <button onclick="addManualStudent()" class="w-full bg-indigo-600 text-white text-sm font-bold py-2 rounded-xl hover:bg-indigo-700 shadow-md">Guardar</button>
                     </div>
@@ -111,7 +110,7 @@
                             <input type="number" id="maxSize" value="5" min="1" class="w-full px-4 py-2 bg-indigo-800 border border-indigo-700 rounded-xl outline-none font-bold">
                         </div>
                     </div>
-                    <button onclick="generateGroups()" class="w-full bg-white text-indigo-900 font-black py-4 rounded-xl hover:bg-indigo-50 transition-all shadow-lg active:scale-95">
+                    <button onclick="generateGroups(true)" class="w-full bg-white text-indigo-900 font-black py-4 rounded-xl hover:bg-indigo-50 transition-all shadow-lg active:scale-95">
                         GENERAR GRUPS
                     </button>
                     <button id="exportBtn" onclick="exportResults()" class="hidden w-full bg-emerald-500 text-white font-black py-4 rounded-xl hover:bg-emerald-600 transition-all shadow-lg">
@@ -130,7 +129,7 @@
                     <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                 </div>
                 <h3 class="text-2xl font-black text-slate-400">Encara no hi ha dades</h3>
-                <p class="text-slate-400 mt-2 max-w-sm">Puja un fitxer Excel o afegeix alumnes manualment per començar a generar les agrupacions.</p>
+                <p class="text-slate-400 mt-2 max-w-sm">Importa o afegeix alumnes manualment per visualitzar els grups.</p>
             </div>
 
             <div id="resultsArea" class="hidden">
@@ -146,17 +145,14 @@
     </div>
 </div>
 
-<!-- Modal Confirmació Reinici -->
+<!-- Modals -->
 <div id="resetModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
-    <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl transform scale-90 transition-all">
-        <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 15.67c-.77 1.333.192 3 1.732 3z"/></svg>
-        </div>
+    <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl">
         <h3 class="text-xl font-black text-slate-800 text-center mb-2">Vols reiniciar-ho tot?</h3>
-        <p class="text-slate-500 text-center text-sm mb-8">Aquesta acció esborrarà tots els alumnes i els grups actuals de forma permanent.</p>
+        <p class="text-slate-500 text-center text-sm mb-8">S'esborraran tots els alumnes i grups.</p>
         <div class="flex gap-3">
             <button onclick="closeModal()" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50">Cancel·lar</button>
-            <button onclick="resetAll()" class="flex-1 px-4 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors">Sí, esborra-ho</button>
+            <button onclick="resetAll()" class="flex-1 px-4 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600">Reiniciar</button>
         </div>
     </div>
 </div>
@@ -177,7 +173,6 @@
         competence: { 3: "Altes", 2: "Mitjanes", 1: "Baixes" }
     };
 
-    // --- LOGICA DE DADES ---
     function toggleManualForm() {
         document.getElementById('manualForm').classList.toggle('hidden');
     }
@@ -201,19 +196,9 @@
         document.getElementById('m_abs').checked = false;
         
         updateInterface();
-        if (currentGroups.length > 0) {
-            // Afegir al grup més buit si ja hi ha grups
-            let targetGroupIdx = 0;
-            currentGroups.forEach((g, i) => { if(g.length < currentGroups[targetGroupIdx].length) targetGroupIdx = i; });
-            currentGroups[targetGroupIdx].push(student);
-            saveToHistory();
-            renderGroups();
-        } else {
-            generateGroups();
-        }
+        generateGroups(true);
     }
 
-    // --- HISTORIAL (DESFER) ---
     function saveToHistory() {
         const state = JSON.stringify(currentGroups);
         if (history.length > 0 && history[history.length - 1] === state) return;
@@ -235,40 +220,34 @@
     }
 
     // --- IMPORTACIÓ ---
-    const fileInput = document.getElementById('fileInput');
-    fileInput.addEventListener('change', (e) => {
+    document.getElementById('fileInput').addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (file) handleFile(file);
+        if (file) {
+            const reader = new FileReader();
+            const ext = file.name.split('.').pop().toLowerCase();
+            reader.onload = (e) => {
+                if (ext === 'csv') processCSV(e.target.result);
+                else processExcel(e.target.result);
+            };
+            if (ext === 'csv') reader.readAsText(file);
+            else reader.readAsArrayBuffer(file);
+        }
     });
-
-    function handleFile(file) {
-        const reader = new FileReader();
-        const extension = file.name.split('.').pop().toLowerCase();
-        reader.onload = function(e) {
-            if (extension === 'csv') processCSV(e.target.result);
-            else processExcel(e.target.result);
-        };
-        if (extension === 'csv') reader.readAsText(file);
-        else reader.readAsArrayBuffer(file);
-    }
 
     function processExcel(buffer) {
         const workbook = XLSX.read(buffer, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const csv = XLSX.utils.sheet_to_csv(workbook.Sheets[sheetName]);
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const csv = XLSX.utils.sheet_to_csv(sheet);
         processCSV(csv);
     }
 
     function processCSV(text) {
         students = [];
         const lines = text.split(/\r?\n/);
-        const header = lines[0].toLowerCase();
-        const separator = header.includes(';') ? ';' : ',';
-
+        const separator = lines[0].includes(';') ? ';' : ',';
+        
         for (let i = 1; i < lines.length; i++) {
-            let line = lines[i].trim();
-            if (!line) continue;
-            const cols = line.split(separator).map(c => c.trim().replace(/^"|$/g, ''));
+            const cols = lines[i].split(separator).map(c => c.trim().replace(/^"|"$/g, ''));
             if (cols[0]) {
                 students.push({
                     id: cols[0],
@@ -281,83 +260,85 @@
             }
         }
         updateInterface();
-        generateGroups();
+        generateGroups(true);
     }
 
     function updateInterface() {
-        document.getElementById('counterLabel').innerText = students.length > 0 ? `${students.length} ALUMNES CARREGATS` : "";
+        document.getElementById('counterLabel').innerText = `${students.length} ALUMNES CARREGATS`;
     }
 
-    // --- ALGORITME D'AGRUPAMENT (Prioritat 1, 2, 3) ---
-    function generateGroups() {
+    // --- ALGORITME REVISAT ---
+    function generateGroups(isNewGenerate = false) {
         if (students.length === 0) return;
         
         const ideal = parseInt(document.getElementById('idealSize').value) || 4;
         const max = parseInt(document.getElementById('maxSize').value) || 5;
         
-        // Càlcul de número de grups necessari per no superar el màxim
+        // Número de grups basat en mida màxima (obligatori no superar-la)
         let numGroups = Math.ceil(students.length / max);
-        // Però intentant acostar-nos a la mida ideal
+        // Intentar apropar-nos a mida ideal si és possible
         const idealNumGroups = Math.round(students.length / ideal);
         numGroups = Math.max(numGroups, idealNumGroups);
         
         let groups = Array.from({ length: numGroups }, () => []);
         
-        // Score d'heterogeneïtat global
-        const avgComp = students.reduce((acc, s) => acc + s.competence, 0) / students.length;
-        const avgPart = students.reduce((acc, s) => acc + s.participation, 0) / students.length;
+        // Per forçar recalculat diferent cada vegada, barregem els alumnes primer
+        let pool = [...students].sort(() => Math.random() - 0.5);
 
-        // Ordenar alumnes per "dificultat" (incompatibilitats i absentisme)
-        let sorted = [...students].sort((a, b) => {
-            const scoreB = b.incompatible.length + (b.absentee ? 10 : 0);
-            const scoreA = a.incompatible.length + (a.absentee ? 10 : 0);
-            return scoreB - scoreA;
-        });
+        // Mitjanes globals per equitat
+        const avgComp = pool.reduce((acc, s) => acc + s.competence, 0) / pool.length;
 
-        sorted.forEach(student => {
+        // Ordenar per "dificultat" (incompatibles primer per assignar-los llocs segurs)
+        pool.sort((a, b) => (b.incompatible.length + (b.absentee ? 10 : 0)) - (a.incompatible.length + (a.absentee ? 10 : 0)));
+
+        pool.forEach(student => {
             let bestGroupIdx = -1;
             let bestScore = -Infinity;
 
-            groups.forEach((g, i) => {
-                let score = 0;
-                
-                // --- CRITERI 1: INCOMPATIBILITATS ---
-                const hasIncompatible = g.some(member => {
-                    const studentIncomps = student.incompatible.map(x => x.toLowerCase());
-                    const memberIncomps = member.incompatible.map(x => x.toLowerCase());
-                    return studentIncomps.includes(member.id.toLowerCase()) || 
-                           memberIncomps.includes(student.id.toLowerCase());
-                });
-                if (hasIncompatible) score -= 1000000;
+            // Barregem l'ordre de revisió dels grups perquè si hi ha empats de score no triï sempre el mateix
+            let groupOrder = Array.from({length: numGroups}, (_, i) => i).sort(() => Math.random() - 0.5);
 
-                // --- CRITERI 2: EQUITAT I HETEROGENEÏTAT ---
-                // No ajuntar massa absentistes
-                const numAbsents = g.filter(m => m.absentee).length;
-                score -= (numAbsents * 1000);
+            groupOrder.forEach(i => {
+                const g = groups[i];
+                let score = Math.random() * 5; // Factor aleatori per evitar patrons repetitius
 
-                // Balanç de competències (intentar que la mitjana del grup s'acosti a la global)
+                // 1. INCOMPATIBILITATS (Prioritat Màxima)
+                const conflict = g.some(m => 
+                    student.incompatible.some(inc => inc.toLowerCase() === m.id.toLowerCase()) || 
+                    m.incompatible.some(inc => inc.toLowerCase() === student.id.toLowerCase())
+                );
+                if (conflict) score -= 1000000;
+
+                // 2. ABSENTISME (No volem molts en un grup)
+                const absents = g.filter(m => m.absentee).length;
+                score -= (absents * 5000);
+
+                // 3. EQUITAT (Heterogeneïtat de competència)
                 if (g.length > 0) {
-                    const groupAvgComp = g.reduce((acc, m) => acc + m.competence, 0) / g.length;
-                    const diffComp = Math.abs(groupAvgComp - avgComp);
-                    score -= (diffComp * 100);
+                    const groupAvg = g.reduce((a, m) => a + m.competence, 0) / g.length;
+                    score -= Math.abs(groupAvg - avgComp) * 100;
                 }
 
-                // Penalització per mida màxima
-                if (g.length >= max) score -= 500000;
-                else if (g.length >= ideal) score -= 500;
+                // 4. MIDES (Cenyir-se a ideal/max)
+                if (g.length >= max) score -= 2000000;
+                else if (g.length >= ideal) score -= 1000;
 
-                // --- CRITERI 3: PREFERÈNCIES ---
-                const hasPref = g.some(m => {
-                    const studentPrefs = student.preferences.map(x => x.toLowerCase());
-                    return studentPrefs.includes(m.id.toLowerCase());
-                });
-                if (hasPref) score += 50;
+                // 5. PREFERÈNCIES
+                const hasPref = g.some(m => student.preferences.some(p => p.toLowerCase() === m.id.toLowerCase()));
+                if (hasPref) score += 500;
 
                 if (score > bestScore) {
                     bestScore = score;
                     bestGroupIdx = i;
                 }
             });
+
+            // Si per alguna raó crítica (tots els grups plens o amb conflicte total) no troba lloc, 
+            // l'assignem al grup amb menys gent, ignorant regles, per no deixar-lo fora.
+            if (bestGroupIdx === -1) {
+                bestGroupIdx = groups.reduce((minIdx, current, idx, arr) => 
+                    current.length < arr[minIdx].length ? idx : minIdx, 0);
+            }
 
             groups[bestGroupIdx].push(student);
         });
@@ -367,7 +348,6 @@
         renderGroups();
     }
 
-    // --- RENDERITZACIÓ ---
     function renderGroups() {
         document.getElementById('emptyState').classList.add('hidden');
         document.getElementById('resultsArea').classList.remove('hidden');
@@ -377,88 +357,66 @@
         
         currentGroups.forEach((group, gIndex) => {
             const container = document.createElement('div');
-            container.className = 'bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm flex flex-col min-h-[180px]';
+            container.className = 'bg-white border border-slate-200 rounded-3xl flex flex-col min-h-[150px] shadow-sm';
             
-            // Event listeners pel Drag & Drop del grup
-            container.addEventListener('dragover', e => { e.preventDefault(); container.classList.add('drop-target'); });
-            container.addEventListener('dragleave', () => container.classList.remove('drop-target'));
-            container.addEventListener('drop', e => {
+            container.ondragover = e => { e.preventDefault(); container.classList.add('drop-target'); };
+            container.ondragleave = () => container.classList.remove('drop-target');
+            container.ondrop = e => {
                 e.preventDefault();
                 container.classList.remove('drop-target');
-                const studentId = e.dataTransfer.getData('text/plain');
-                const fromIdx = parseInt(e.dataTransfer.getData('fromGroup'));
-                moveStudent(studentId, fromIdx, gIndex);
-            });
+                const id = e.dataTransfer.getData('text');
+                const from = parseInt(e.dataTransfer.getData('from'));
+                moveStudent(id, from, gIndex);
+            };
 
             let html = `
-                <div class="bg-slate-50 px-5 py-3 border-b border-slate-100 flex justify-between items-center">
+                <div class="bg-slate-50 px-5 py-3 border-b border-slate-100 flex justify-between items-center rounded-t-3xl">
                     <span class="font-black text-slate-500 uppercase text-[10px]">Equip ${gIndex + 1}</span>
-                    <span class="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full border border-slate-200">${group.length} Alumnes</span>
+                    <span class="text-[10px] font-bold text-slate-400">${group.length} Alumnes</span>
                 </div>
-                <div class="p-4 space-y-3 flex-1 scrollable-panel">`;
+                <div class="p-4 space-y-2 flex-1 scrollable-panel">`;
             
             group.forEach(student => {
-                // Comprovació de Warning d'incompatibilitat en el grup actual
-                const hasConflict = group.some(other => {
-                    if (other.id === student.id) return false;
-                    const sIncomps = student.incompatible.map(x => x.toLowerCase());
-                    const oIncomps = other.incompatible.map(x => x.toLowerCase());
-                    return sIncomps.includes(other.id.toLowerCase()) || oIncomps.includes(student.id.toLowerCase());
-                });
+                const hasConflict = group.some(m => 
+                    m.id !== student.id && (
+                        student.incompatible.some(inc => inc.toLowerCase() === m.id.toLowerCase()) || 
+                        m.incompatible.some(inc => inc.toLowerCase() === student.id.toLowerCase())
+                    )
+                );
 
                 html += `
                     <div draggable="true" 
-                         ondragstart="handleDragStart(event, '${student.id}', ${gIndex})" 
-                         class="student-card px-4 py-3 rounded-2xl border transition-all flex justify-between items-center ${hasConflict ? 'incompatible-warning' : 'border-slate-100 bg-slate-50 hover:bg-white hover:border-indigo-300'}">
+                         ondragstart="event.dataTransfer.setData('text', '${student.id}'); event.dataTransfer.setData('from', ${gIndex});" 
+                         class="student-card px-4 py-2 rounded-xl border flex justify-between items-center ${hasConflict ? 'incompatible-warning' : 'border-slate-100 bg-slate-50 hover:bg-white'}">
                         <div class="flex flex-col">
-                            <span class="text-xs font-black text-slate-700">${student.id}</span>
-                            <div class="flex gap-1.5 mt-1">
-                                <span class="text-[8px] font-bold px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-md">COMP: ${student.competence}</span>
-                                <span class="text-[8px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-md">PART: ${student.participation}</span>
-                                ${student.absentee ? '<span class="text-[8px] font-black px-1.5 py-0.5 bg-red-600 text-white rounded-md animate-pulse">ABSENTISTA</span>' : ''}
+                            <span class="text-xs font-bold text-slate-700">${student.id}</span>
+                            <div class="flex gap-1 mt-0.5">
+                                <span class="text-[7px] font-bold px-1 py-0.2 bg-indigo-100 rounded">C: ${student.competence}</span>
+                                <span class="text-[7px] font-bold px-1 py-0.2 bg-amber-100 rounded">P: ${student.participation}</span>
+                                ${student.absentee ? '<span class="text-[7px] font-black px-1 py-0.2 bg-red-600 text-white rounded">ABSENT</span>' : ''}
                             </div>
                         </div>
-                        ${hasConflict ? '<span title="Incompatibilitat detectada!" class="text-xl">⚠️</span>' : ''}
+                        ${hasConflict ? '⚠️' : ''}
                     </div>`;
             });
             container.innerHTML = html + `</div>`;
             grid.appendChild(container);
         });
         
-        document.getElementById('statsLabel').innerText = `Total: ${currentGroups.length} Grups • Dades: ${students.length} Alumnes`;
-    }
-
-    // --- ACCIONS DE DRAG & DROP ---
-    function handleDragStart(e, id, fromIdx) {
-        e.dataTransfer.setData('text/plain', id);
-        e.dataTransfer.setData('fromGroup', fromIdx);
+        document.getElementById('statsLabel').innerText = `Total: ${currentGroups.length} Grups • ${students.length} Alumnes`;
     }
 
     function moveStudent(id, from, to) {
         if (from === to) return;
-        const sIdx = currentGroups[from].findIndex(s => s.id === id);
-        if (sIdx > -1) {
-            const [student] = currentGroups[from].splice(sIdx, 1);
-            currentGroups[to].push(student);
-            saveToHistory();
-            renderGroups();
-        }
+        const idx = currentGroups[from].findIndex(s => s.id === id);
+        const [student] = currentGroups[from].splice(idx, 1);
+        currentGroups[to].push(student);
+        saveToHistory();
+        renderGroups();
     }
 
-    // --- FUNCIONS AUXILIARS ---
-    function showResetConfirm() { 
-        const modal = document.getElementById('resetModal');
-        modal.classList.add('opacity-100', 'pointer-events-auto');
-        modal.querySelector('div').classList.remove('scale-90');
-        modal.querySelector('div').classList.add('scale-100');
-    }
-    
-    function closeModal() { 
-        const modal = document.getElementById('resetModal');
-        modal.classList.remove('opacity-100', 'pointer-events-auto');
-        modal.querySelector('div').classList.add('scale-90');
-        modal.querySelector('div').classList.remove('scale-100');
-    }
+    function showResetConfirm() { document.getElementById('resetModal').classList.replace('opacity-0', 'opacity-100'); document.getElementById('resetModal').classList.replace('pointer-events-none', 'pointer-events-auto'); }
+    function closeModal() { document.getElementById('resetModal').classList.replace('opacity-100', 'opacity-0'); document.getElementById('resetModal').classList.replace('pointer-events-auto', 'pointer-events-none'); }
     
     function resetAll() {
         students = []; currentGroups = []; history = [];
@@ -470,39 +428,31 @@
 
     function downloadTemplate() {
         const headers = ["Codi Alumne", "Participacio", "Competencies", "Incompatible", "Absentista", "Preferències"];
-        const samples = [
-            ["Alumne_01", "Alt", "Altes", "Alumne_02-Alumne_05", "No", "Alumne_10"],
-            ["Alumne_02", "Mitjà", "Mitjanes", "Alumne_01", "No", ""],
-            ["Alumne_03", "Baix", "Baixes", "", "Si", ""]
-        ];
-        const ws = XLSX.utils.aoa_to_sheet([headers, ...samples]);
+        const ws = XLSX.utils.aoa_to_sheet([headers, ["Exemple_1", "Alt", "Altes", "Exemple_2", "No", "Exemple_3"]]);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Dades");
-        XLSX.writeFile(wb, "plantilla_agrupacions.xlsx");
+        XLSX.writeFile(wb, "plantilla_alumnes.xlsx");
     }
 
     function exportResults() {
-        // Mateixes columnes que l'entrada
-        const data = [["Codi Alumne", "Grup", "Participacio", "Competencies", "Incompatible", "Absentista", "Preferències"]];
-        
-        currentGroups.forEach((group, idx) => {
-            group.forEach(s => {
+        const data = [["Codi Alumne", "Participacio", "Competencies", "Incompatible", "Absentista", "Preferències", "Grup Assignat"]];
+        currentGroups.forEach((g, i) => {
+            g.forEach(s => {
                 data.push([
-                    s.id,
-                    `Grup ${idx + 1}`,
-                    revMapping.participation[s.participation],
-                    revMapping.competence[s.competence],
-                    s.incompatible.join("-"),
-                    s.absentee ? "Si" : "No",
-                    s.preferences.join("-")
+                    s.id, 
+                    revMapping.participation[s.participation], 
+                    revMapping.competence[s.competence], 
+                    s.incompatible.join("-"), 
+                    s.absentee ? "Si" : "No", 
+                    s.preferences.join("-"),
+                    `Grup ${i+1}`
                 ]);
             });
         });
-
         const ws = XLSX.utils.aoa_to_sheet(data);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Resultats");
-        XLSX.writeFile(wb, "agrupacions_classe.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Agrupacions");
+        XLSX.writeFile(wb, "resultats_agrupacions.xlsx");
     }
 </script>
 </body>
