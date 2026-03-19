@@ -432,7 +432,7 @@
 
     function exportToCSV() {
         // Encapçalaments incloent tots els camps originals i el grup
-        let csv = "Codi_Alumne,Grup,Participacio,Competencies,Incompatible,Absentista,Preferencies\n";
+        let csv = "Codi_Alumne,Participacio,Competencies,Incompatible,Absentista,Preferencies,Grup\n";
         
         currentGroups.forEach((group, groupIdx) => {
             group.forEach(s => {
