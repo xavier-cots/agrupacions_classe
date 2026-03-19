@@ -10,23 +10,12 @@
         .dragging { opacity: 0.5; transform: scale(0.95); }
         .drop-target { border: 2px dashed #6366f1 !important; background-color: #f5f3ff !important; }
         
-        @media (min-width: 1024px) {
-            body { overflow: hidden; height: 100vh; }
-            #app { height: 100vh; display: flex; flex-direction: column; }
-            .dashboard-container { flex: 1; overflow: hidden; }
-            .scrollable-panel { overflow-y: auto; height: 100%; padding-bottom: 2rem; }
-        }
-
-        .scrollable-panel::-webkit-scrollbar { width: 6px; }
-        .scrollable-panel::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-
-        .modal-active { opacity: 1 !important; pointer-events: auto !important; }
         .student-card { transition: all 0.2s ease; cursor: grab; }
         .student-card:active { cursor: grabbing; }
         
-        .incompatible-alert { 
+        .incompatible-warning { 
             animation: pulse-red 2s infinite; 
-            border-color: #ef4444 !important;
+            border: 2px solid #ef4444 !important;
             background-color: #fef2f2 !important;
         }
         
@@ -34,138 +23,140 @@
             0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
             50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
         }
+
+        .scrollable-panel { max-height: 80vh; overflow-y: auto; }
+        .scrollable-panel::-webkit-scrollbar { width: 6px; }
+        .scrollable-panel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans">
+<body class="bg-slate-50 text-slate-800 min-h-screen">
 
-<div id="app" class="max-w-[1600px] mx-auto w-full px-4 md:px-6">
-    <header class="py-4 flex flex-col md:flex-row justify-between items-center border-b border-slate-200 mb-4 bg-slate-50 sticky top-0 z-10">
-        <div class="text-center md:text-left">
-            <h1 class="text-2xl font-bold text-indigo-700">Agrupacions de Classe</h1>
-            <p class="text-xs text-slate-500 font-medium uppercase tracking-wider">Gestió d'Equips i Incompatibilitats</p>
+<div id="app" class="max-w-[1600px] mx-auto px-4 py-6">
+    <!-- Capçalera -->
+    <header class="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div>
+            <h1 class="text-3xl font-black text-indigo-700">Agrupacions de Classe</h1>
+            <p class="text-slate-500 font-medium">Gestió intel·ligent d'equips heterogenis</p>
         </div>
-        <div class="flex items-center gap-3 mt-4 md:mt-0">
-            <button id="undoBtn" onclick="undo()" disabled class="disabled:opacity-30 disabled:cursor-not-allowed text-[11px] font-bold text-slate-600 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+        <div class="flex flex-wrap gap-2 mt-4 md:mt-0">
+            <button id="undoBtn" onclick="undo()" disabled class="disabled:opacity-30 flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl font-bold transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                 Desfer
             </button>
-            <button onclick="downloadTemplate()" class="text-[11px] font-bold text-indigo-600 hover:bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            <button onclick="downloadTemplate()" class="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-xl font-bold transition-all border border-indigo-100">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Plantilla XLSX
             </button>
-            <button onclick="showResetConfirm()" class="text-[11px] font-bold text-amber-600 hover:bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            <button onclick="showResetConfirm()" class="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl font-bold transition-all border border-red-100">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 Reiniciar
             </button>
         </div>
     </header>
 
-    <div class="dashboard-container grid grid-cols-1 lg:grid-cols-12 gap-6 h-full pb-6">
-        <!-- Barra Lateral -->
-        <div class="lg:col-span-3 scrollable-panel space-y-5">
-            <!-- 1. Pujada de fitxers -->
-            <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <span class="w-5 h-5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-[10px]">1</span>
-                    Dades Alumnat
-                </h2>
-                <div id="dropZone" class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-indigo-400 transition-colors cursor-pointer relative group">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Columna Configuració (3/12) -->
+        <aside class="lg:col-span-3 space-y-6">
+            <!-- Pujada de Fitxers -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">1. Importar Dades</h2>
+                <div id="dropZone" class="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-indigo-400 transition-all cursor-pointer relative group bg-slate-50">
                     <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" class="absolute inset-0 opacity-0 cursor-pointer">
-                    <div class="text-indigo-500 group-hover:scale-110 transition-transform mb-2 flex justify-center">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    </div>
-                    <p class="text-xs font-bold text-slate-700">Arrossega fins aquí el fitxer o penja fitxer</p>
-                    <p class="text-[10px] text-slate-400 mt-1">Formats acceptats: .xlsx, .csv</p>
+                    <svg class="w-10 h-10 text-indigo-400 mx-auto mb-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    <p class="text-sm font-bold text-slate-700">Arrastra fins aquí el fitxer o penja fitxer</p>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase">Excel (xlsx) o CSV</p>
                 </div>
 
                 <!-- Introducció Manual -->
-                <div class="mt-4 border-t border-slate-100 pt-4">
-                    <button onclick="toggleManualForm()" class="text-[11px] font-bold text-indigo-600 flex items-center gap-1 hover:underline">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"/></svg>
+                <div class="mt-6 border-t border-slate-100 pt-4">
+                    <button onclick="toggleManualForm()" class="w-full text-xs font-bold text-indigo-600 flex items-center justify-center gap-2 hover:bg-indigo-50 py-2 rounded-lg transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                         Afegir alumne manualment
                     </button>
-                    <div id="manualForm" class="hidden mt-3 space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                        <input type="text" id="m_id" placeholder="Nom alumne" class="w-full text-xs p-2 rounded border border-slate-300">
+                    <div id="manualForm" class="hidden mt-4 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <input type="text" id="m_id" placeholder="Codi/Nom Alumne" class="w-full text-sm p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
                         <div class="grid grid-cols-2 gap-2">
-                            <select id="m_part" class="text-[10px] p-2 rounded border border-slate-300">
+                            <select id="m_part" class="text-xs p-2 rounded-lg border border-slate-300">
                                 <option value="Alt">Part: Alt</option>
                                 <option value="Mitjà" selected>Part: Mitjà</option>
                                 <option value="Baix">Part: Baix</option>
                             </select>
-                            <select id="m_comp" class="text-[10px] p-2 rounded border border-slate-300">
+                            <select id="m_comp" class="text-xs p-2 rounded-lg border border-slate-300">
                                 <option value="Altes">Comp: Altes</option>
                                 <option value="Mitjanes" selected>Comp: Mitjanes</option>
                                 <option value="Baixes">Comp: Baixes</option>
                             </select>
                         </div>
-                        <input type="text" id="m_incomp" placeholder="Incompatibles (separats per -)" class="w-full text-[10px] p-2 rounded border border-slate-300">
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" id="m_abs">
-                            <label for="m_abs" class="text-[10px] font-bold text-slate-600 uppercase">Absentisme</label>
+                        <input type="text" id="m_incomp" placeholder="Incompatibles (separats per -)" class="w-full text-xs p-2 rounded-lg border border-slate-300">
+                        <div class="flex items-center gap-2 px-1">
+                            <input type="checkbox" id="m_abs" class="w-4 h-4 text-indigo-600">
+                            <label for="m_abs" class="text-xs font-bold text-slate-600">Absentisme</label>
                         </div>
-                        <button onclick="addManualStudent()" class="w-full bg-indigo-600 text-white text-xs font-bold py-2 rounded-lg hover:bg-indigo-700 transition-colors">Guardar Alumne</button>
+                        <button onclick="addManualStudent()" class="w-full bg-indigo-600 text-white text-sm font-bold py-2 rounded-xl hover:bg-indigo-700 shadow-md">Guardar</button>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            <!-- 2. Configuració -->
-            <section class="bg-indigo-700 p-5 rounded-2xl shadow-lg text-white">
-                <h2 class="text-sm font-bold text-indigo-200 uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <span class="w-5 h-5 bg-white text-indigo-700 rounded-full flex items-center justify-center text-[10px]">2</span>
-                    Configuració
-                </h2>
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-3">
+            <!-- Configuració de Grups -->
+            <div class="bg-indigo-900 p-6 rounded-2xl shadow-xl text-white">
+                <h2 class="text-sm font-black text-indigo-300 uppercase tracking-widest mb-4">2. Configuració</h2>
+                <div class="space-y-5">
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-[10px] font-bold text-indigo-200 mb-1 uppercase">Mida Ideal</label>
-                            <input type="number" id="preferredSize" value="4" min="1" class="w-full px-3 py-2 bg-indigo-800 border border-indigo-500 rounded-lg outline-none text-sm font-bold">
+                            <label class="block text-[10px] font-black text-indigo-300 mb-1 uppercase">Mida Ideal</label>
+                            <input type="number" id="idealSize" value="4" min="1" class="w-full px-4 py-2 bg-indigo-800 border border-indigo-700 rounded-xl outline-none font-bold">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-indigo-200 mb-1 uppercase">Mida Màx.</label>
-                            <input type="number" id="maxSize" value="5" min="1" class="w-full px-3 py-2 bg-indigo-800 border border-indigo-500 rounded-lg outline-none text-sm font-bold">
+                            <label class="block text-[10px] font-black text-indigo-300 mb-1 uppercase">Mida Màxima</label>
+                            <input type="number" id="maxSize" value="5" min="1" class="w-full px-4 py-2 bg-indigo-800 border border-indigo-700 rounded-xl outline-none font-bold">
                         </div>
                     </div>
-                    <button onclick="generateGroups()" class="w-full bg-white hover:bg-indigo-50 text-indigo-700 font-bold py-3 rounded-xl transition-all shadow-md active:scale-95">
-                        Sortit i Agrupar
+                    <button onclick="generateGroups()" class="w-full bg-white text-indigo-900 font-black py-4 rounded-xl hover:bg-indigo-50 transition-all shadow-lg active:scale-95">
+                        GENERAR GRUPS
                     </button>
-                    <button id="exportBtn" onclick="exportToCSV()" class="hidden w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition-all shadow-md">
-                        Exportar Resultats
+                    <button id="exportBtn" onclick="exportResults()" class="hidden w-full bg-emerald-500 text-white font-black py-4 rounded-xl hover:bg-emerald-600 transition-all shadow-lg">
+                        EXPORTAR RESULTATS
                     </button>
                 </div>
-            </section>
+            </div>
+            
+            <div id="counterLabel" class="text-center text-xs font-black text-slate-400 uppercase"></div>
+        </aside>
 
-            <div id="counterLabel" class="text-center text-[11px] font-black text-slate-400 uppercase tracking-tighter"></div>
-        </div>
-
-        <!-- Zona Principal -->
-        <div class="lg:col-span-9 scrollable-panel">
-            <div id="emptyState" class="h-full flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-dashed border-slate-200 p-10 text-center">
-                <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
-                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 005.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        <!-- Columna Resultats (9/12) -->
+        <main class="lg:col-span-9">
+            <div id="emptyState" class="h-full min-h-[400px] flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-dashed border-slate-200 p-12 text-center">
+                <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6 text-slate-300">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                 </div>
-                <h3 class="text-xl font-bold text-slate-400">Pujar dades per començar</h3>
-                <p class="text-xs text-slate-400 mt-2">O afegeix alumnes manualment des de la barra lateral</p>
+                <h3 class="text-2xl font-black text-slate-400">Encara no hi ha dades</h3>
+                <p class="text-slate-400 mt-2 max-w-sm">Puja un fitxer Excel o afegeix alumnes manualment per començar a generar les agrupacions.</p>
             </div>
 
             <div id="resultsArea" class="hidden">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-black text-slate-800">Panell de Treball</h2>
-                    <span id="statsLabel" class="text-[11px] font-bold bg-white border border-slate-200 px-4 py-1.5 rounded-full text-slate-500 shadow-sm"></span>
+                    <h2 class="text-2xl font-black text-slate-800">Panell d'Agrupacions</h2>
+                    <div id="statsLabel" class="text-xs font-bold bg-white border border-slate-200 px-4 py-2 rounded-full text-slate-500 shadow-sm"></div>
                 </div>
-                <div id="groupsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+                <div id="groupsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- Els grups es generen aquí -->
+                </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
 
-<!-- Modal Reset -->
-<div id="customModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
-    <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl transform scale-95 transition-all duration-300">
-        <h3 class="text-xl font-bold text-slate-800 text-center mb-2">Reiniciar dades?</h3>
-        <p class="text-slate-500 text-center text-sm mb-8">Es borraran tots els alumnes i grups actuals.</p>
+<!-- Modal Confirmació Reinici -->
+<div id="resetModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+    <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl transform scale-90 transition-all">
+        <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 15.67c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <h3 class="text-xl font-black text-slate-800 text-center mb-2">Vols reiniciar-ho tot?</h3>
+        <p class="text-slate-500 text-center text-sm mb-8">Aquesta acció esborrarà tots els alumnes i els grups actuals de forma permanent.</p>
         <div class="flex gap-3">
-            <button onclick="closeModal()" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-500 font-bold text-sm">Enrere</button>
-            <button id="confirmResetBtn" class="flex-1 px-4 py-3 rounded-xl bg-amber-500 text-white font-bold text-sm">Borrar Tot</button>
+            <button onclick="closeModal()" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50">Cancel·lar</button>
+            <button onclick="resetAll()" class="flex-1 px-4 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors">Sí, esborra-ho</button>
         </div>
     </div>
 </div>
@@ -174,11 +165,11 @@
     let students = [];
     let currentGroups = [];
     let history = []; 
-    const MAX_HISTORY = 30;
+    const MAX_HISTORY = 50;
 
     const mapping = { 
         "Alt": 3, "Altes": 3, "Mitjà": 2, "Mitjanes": 2, "Baix": 1, "Baixes": 1, 
-        "Si": true, "No": false, "SÍ": true, "SI": true, "S": true, "N": false 
+        "Si": true, "No": false, "SÍ": true, "SI": true, "S": true, "N": false, "True": true, "False": false
     };
     
     const revMapping = {
@@ -188,8 +179,7 @@
 
     // --- LOGICA DE DADES ---
     function toggleManualForm() {
-        const form = document.getElementById('manualForm');
-        form.classList.toggle('hidden');
+        document.getElementById('manualForm').classList.toggle('hidden');
     }
 
     function addManualStudent() {
@@ -212,10 +202,10 @@
         
         updateInterface();
         if (currentGroups.length > 0) {
-            // Si ja hi ha grups, l'afegim al grup més petit
-            let minGroup = 0;
-            currentGroups.forEach((g, i) => { if(g.length < currentGroups[minGroup].length) minGroup = i; });
-            currentGroups[minGroup].push(student);
+            // Afegir al grup més buit si ja hi ha grups
+            let targetGroupIdx = 0;
+            currentGroups.forEach((g, i) => { if(g.length < currentGroups[targetGroupIdx].length) targetGroupIdx = i; });
+            currentGroups[targetGroupIdx].push(student);
             saveToHistory();
             renderGroups();
         } else {
@@ -223,7 +213,7 @@
         }
     }
 
-    // --- HISTORIAL ---
+    // --- HISTORIAL (DESFER) ---
     function saveToHistory() {
         const state = JSON.stringify(currentGroups);
         if (history.length > 0 && history[history.length - 1] === state) return;
@@ -244,7 +234,7 @@
         document.getElementById('undoBtn').disabled = history.length <= 1;
     }
 
-    // --- GESTIÓ DE FITXERS ---
+    // --- IMPORTACIÓ ---
     const fileInput = document.getElementById('fileInput');
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -272,20 +262,21 @@
     function processCSV(text) {
         students = [];
         const lines = text.split(/\r?\n/);
+        const header = lines[0].toLowerCase();
+        const separator = header.includes(';') ? ';' : ',';
+
         for (let i = 1; i < lines.length; i++) {
             let line = lines[i].trim();
             if (!line) continue;
-            const separator = line.includes(';') ? ';' : ',';
-            const cols = line.match(/(".*?"|[^,;]+|(?<=[,;])(?=[,;])|(?<=[,;])$)/g) || [];
-            const cleanCols = cols.map(c => c.trim().replace(/^"|$/g, ''));
-            if (cleanCols[0]) {
+            const cols = line.split(separator).map(c => c.trim().replace(/^"|$/g, ''));
+            if (cols[0]) {
                 students.push({
-                    id: cleanCols[0],
-                    participation: mapping[cleanCols[1]] || 2,
-                    competence: mapping[cleanCols[2]] || 2,
-                    incompatible: cleanCols[3] ? String(cleanCols[3]).split(/[-|/]/).map(x => x.trim()) : [],
-                    absentee: mapping[cleanCols[4]] || false,
-                    preferences: cleanCols[5] ? String(cleanCols[5]).split(/[-|/]/).map(x => x.trim()) : []
+                    id: cols[0],
+                    participation: mapping[cols[1]] || 2,
+                    competence: mapping[cols[2]] || 2,
+                    incompatible: cols[3] ? cols[3].split(/[-|/]/).map(x => x.trim()).filter(x => x) : [],
+                    absentee: mapping[cols[4]] || false,
+                    preferences: cols[5] ? cols[5].split(/[-|/]/).map(x => x.trim()).filter(x => x) : []
                 });
             }
         }
@@ -297,74 +288,78 @@
         document.getElementById('counterLabel').innerText = students.length > 0 ? `${students.length} ALUMNES CARREGATS` : "";
     }
 
-    // --- ALGORITME D'AGRUPAMENT (Lògica 3 criteris) ---
+    // --- ALGORITME D'AGRUPAMENT (Prioritat 1, 2, 3) ---
     function generateGroups() {
         if (students.length === 0) return;
         
-        const ideal = parseInt(document.getElementById('preferredSize').value) || 4;
+        const ideal = parseInt(document.getElementById('idealSize').value) || 4;
         const max = parseInt(document.getElementById('maxSize').value) || 5;
-        const totalAlumnes = students.length;
-
-        let numGroups = Math.max(1, Math.round(totalAlumnes / ideal));
+        
+        // Càlcul de número de grups necessari per no superar el màxim
+        let numGroups = Math.ceil(students.length / max);
+        // Però intentant acostar-nos a la mida ideal
+        const idealNumGroups = Math.round(students.length / ideal);
+        numGroups = Math.max(numGroups, idealNumGroups);
         
         let groups = Array.from({ length: numGroups }, () => []);
-        const globalAvgComp = students.reduce((acc, s) => acc + s.competence, 0) / totalAlumnes;
         
-        // Prioritat: Dificultat (més incompatibilitats i absentisme primer)
+        // Score d'heterogeneïtat global
+        const avgComp = students.reduce((acc, s) => acc + s.competence, 0) / students.length;
+        const avgPart = students.reduce((acc, s) => acc + s.participation, 0) / students.length;
+
+        // Ordenar alumnes per "dificultat" (incompatibilitats i absentisme)
         let sorted = [...students].sort((a, b) => {
-            const scoreB = b.incompatible.length + (b.absentee ? 5 : 0);
-            const scoreA = a.incompatible.length + (a.absentee ? 5 : 0);
+            const scoreB = b.incompatible.length + (b.absentee ? 10 : 0);
+            const scoreA = a.incompatible.length + (a.absentee ? 10 : 0);
             return scoreB - scoreA;
         });
 
         sorted.forEach(student => {
-            let bestGrup = -1;
+            let bestGroupIdx = -1;
             let bestScore = -Infinity;
 
             groups.forEach((g, i) => {
                 let score = 0;
                 
-                // 1. PRIORITAT ABSOLUTA: INCOMPATIBILITATS
-                const hasIncompatible = g.some(m => {
+                // --- CRITERI 1: INCOMPATIBILITATS ---
+                const hasIncompatible = g.some(member => {
                     const studentIncomps = student.incompatible.map(x => x.toLowerCase());
-                    const memberIncomps = m.incompatible.map(x => x.toLowerCase());
-                    return studentIncomps.includes(m.id.toLowerCase()) || 
+                    const memberIncomps = member.incompatible.map(x => x.toLowerCase());
+                    return studentIncomps.includes(member.id.toLowerCase()) || 
                            memberIncomps.includes(student.id.toLowerCase());
                 });
                 if (hasIncompatible) score -= 1000000;
 
-                // 2. PRIORITAT: EQUITAT I HETEROGENEÏTAT
-                // Evitar concentrar absentisme
-                if (student.absentee) {
-                    const numAbsents = g.filter(m => m.absentee).length;
-                    score -= (numAbsents * 5000);
-                }
-                
-                // Balanç de competències (heterogeneïtat)
+                // --- CRITERI 2: EQUITAT I HETEROGENEÏTAT ---
+                // No ajuntar massa absentistes
+                const numAbsents = g.filter(m => m.absentee).length;
+                score -= (numAbsents * 1000);
+
+                // Balanç de competències (intentar que la mitjana del grup s'acosti a la global)
                 if (g.length > 0) {
-                    const currentAvg = g.reduce((acc, m) => acc + m.competence, 0) / g.length;
-                    const diff = Math.abs(currentAvg - globalAvgComp);
-                    score -= (diff * 100);
+                    const groupAvgComp = g.reduce((acc, m) => acc + m.competence, 0) / g.length;
+                    const diffComp = Math.abs(groupAvgComp - avgComp);
+                    score -= (diffComp * 100);
                 }
 
-                // Penalitzar grups massa plens (mida ideal/max)
+                // Penalització per mida màxima
                 if (g.length >= max) score -= 500000;
-                else if (g.length >= ideal) score -= 1000;
+                else if (g.length >= ideal) score -= 500;
 
-                // 3. PRIORITAT: PREFERÈNCIES
+                // --- CRITERI 3: PREFERÈNCIES ---
                 const hasPref = g.some(m => {
                     const studentPrefs = student.preferences.map(x => x.toLowerCase());
                     return studentPrefs.includes(m.id.toLowerCase());
                 });
-                if (hasPref) score += 500;
+                if (hasPref) score += 50;
 
                 if (score > bestScore) {
                     bestScore = score;
-                    bestGrup = i;
+                    bestGroupIdx = i;
                 }
             });
 
-            groups[bestGrup].push(student);
+            groups[bestGroupIdx].push(student);
         });
 
         currentGroups = groups;
@@ -372,7 +367,7 @@
         renderGroups();
     }
 
-    // --- RENDERITZACIÓ I DRAG & DROP ---
+    // --- RENDERITZACIÓ ---
     function renderGroups() {
         document.getElementById('emptyState').classList.add('hidden');
         document.getElementById('resultsArea').classList.remove('hidden');
@@ -382,12 +377,10 @@
         
         currentGroups.forEach((group, gIndex) => {
             const container = document.createElement('div');
-            container.className = 'bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm transition-all flex flex-col min-h-[150px]';
+            container.className = 'bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm flex flex-col min-h-[180px]';
             
-            container.addEventListener('dragover', e => { 
-                e.preventDefault(); 
-                container.classList.add('drop-target'); 
-            });
+            // Event listeners pel Drag & Drop del grup
+            container.addEventListener('dragover', e => { e.preventDefault(); container.classList.add('drop-target'); });
             container.addEventListener('dragleave', () => container.classList.remove('drop-target'));
             container.addEventListener('drop', e => {
                 e.preventDefault();
@@ -398,43 +391,44 @@
             });
 
             let html = `
-                <div class="bg-indigo-50/50 px-5 py-3 border-b border-indigo-100 flex justify-between items-center">
-                    <span class="font-black text-indigo-700 uppercase text-[10px]">Grup ${gIndex + 1}</span>
-                    <span class="text-[10px] bg-white text-indigo-400 px-2 py-0.5 rounded-full font-bold">${group.length} Alumnes</span>
+                <div class="bg-slate-50 px-5 py-3 border-b border-slate-100 flex justify-between items-center">
+                    <span class="font-black text-slate-500 uppercase text-[10px]">Equip ${gIndex + 1}</span>
+                    <span class="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full border border-slate-200">${group.length} Alumnes</span>
                 </div>
-                <div class="p-4 space-y-2 flex-1">`;
+                <div class="p-4 space-y-3 flex-1 scrollable-panel">`;
             
             group.forEach(student => {
-                // Comprovació d'incompatibilitat per al Warning
-                const hasIncompatible = group.some(other => {
+                // Comprovació de Warning d'incompatibilitat en el grup actual
+                const hasConflict = group.some(other => {
                     if (other.id === student.id) return false;
-                    const studentIncomps = student.incompatible.map(x => x.toLowerCase());
-                    const otherIncomps = other.incompatible.map(x => x.toLowerCase());
-                    return studentIncomps.includes(other.id.toLowerCase()) || 
-                           otherIncomps.includes(student.id.toLowerCase());
+                    const sIncomps = student.incompatible.map(x => x.toLowerCase());
+                    const oIncomps = other.incompatible.map(x => x.toLowerCase());
+                    return sIncomps.includes(other.id.toLowerCase()) || oIncomps.includes(student.id.toLowerCase());
                 });
 
                 html += `
                     <div draggable="true" 
                          ondragstart="handleDragStart(event, '${student.id}', ${gIndex})" 
-                         class="student-card px-4 py-3 rounded-2xl border transition-all flex justify-between items-center text-xs font-bold ${hasIncompatible ? 'incompatible-alert' : 'border-slate-100 bg-slate-50 hover:border-indigo-200 hover:bg-white'}">
+                         class="student-card px-4 py-3 rounded-2xl border transition-all flex justify-between items-center ${hasConflict ? 'incompatible-warning' : 'border-slate-100 bg-slate-50 hover:bg-white hover:border-indigo-300'}">
                         <div class="flex flex-col">
-                            <span class="text-slate-700">${student.id}</span>
-                            <div class="flex gap-2 mt-1">
-                                <span class="text-[9px] px-1 bg-indigo-100 text-indigo-600 rounded">C:${student.competence}</span>
-                                <span class="text-[9px] px-1 bg-amber-100 text-amber-600 rounded">P:${student.participation}</span>
-                                ${student.absentee ? '<span class="text-[9px] px-1 bg-red-100 text-red-600 rounded font-black">ABS</span>' : ''}
+                            <span class="text-xs font-black text-slate-700">${student.id}</span>
+                            <div class="flex gap-1.5 mt-1">
+                                <span class="text-[8px] font-bold px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded-md">COMP: ${student.competence}</span>
+                                <span class="text-[8px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-md">PART: ${student.participation}</span>
+                                ${student.absentee ? '<span class="text-[8px] font-black px-1.5 py-0.5 bg-red-600 text-white rounded-md animate-pulse">ABSENTISTA</span>' : ''}
                             </div>
                         </div>
-                        ${hasIncompatible ? '<span title="Incompatibilitat!" class="text-base animate-bounce">⚠️</span>' : ''}
+                        ${hasConflict ? '<span title="Incompatibilitat detectada!" class="text-xl">⚠️</span>' : ''}
                     </div>`;
             });
             container.innerHTML = html + `</div>`;
             grid.appendChild(container);
         });
-        document.getElementById('statsLabel').innerText = `${currentGroups.length} Equips • Mida ideal: ${document.getElementById('preferredSize').value}`;
+        
+        document.getElementById('statsLabel').innerText = `Total: ${currentGroups.length} Grups • Dades: ${students.length} Alumnes`;
     }
 
+    // --- ACCIONS DE DRAG & DROP ---
     function handleDragStart(e, id, fromIdx) {
         e.dataTransfer.setData('text/plain', id);
         e.dataTransfer.setData('fromGroup', fromIdx);
@@ -451,45 +445,64 @@
         }
     }
 
-    // --- UTILITATS ---
-    function showResetConfirm() { document.getElementById('customModal').classList.add('modal-active'); }
-    function closeModal() { document.getElementById('customModal').classList.remove('modal-active'); }
+    // --- FUNCIONS AUXILIARS ---
+    function showResetConfirm() { 
+        const modal = document.getElementById('resetModal');
+        modal.classList.add('opacity-100', 'pointer-events-auto');
+        modal.querySelector('div').classList.remove('scale-90');
+        modal.querySelector('div').classList.add('scale-100');
+    }
     
-    document.getElementById('confirmResetBtn').onclick = () => {
+    function closeModal() { 
+        const modal = document.getElementById('resetModal');
+        modal.classList.remove('opacity-100', 'pointer-events-auto');
+        modal.querySelector('div').classList.add('scale-90');
+        modal.querySelector('div').classList.remove('scale-100');
+    }
+    
+    function resetAll() {
         students = []; currentGroups = []; history = [];
         document.getElementById('resultsArea').classList.add('hidden');
         document.getElementById('emptyState').classList.remove('hidden');
         document.getElementById('exportBtn').classList.add('hidden');
         updateInterface(); updateUndoButton(); closeModal();
-    };
-
-    function downloadTemplate() {
-        const data = [
-            ["Codi_Alumne", "Participacio", "Competencies", "Incompatible", "Absentista", "Preferencies"],
-            ["Alumne A", "Alt", "Altes", "Alumne B", "No", "Alumne C"],
-            ["Alumne B", "Mitjà", "Mitjanes", "Alumne A", "No", ""],
-            ["Alumne C", "Baix", "Baixes", "", "Si", "Alumne A"]
-        ];
-        const ws = XLSX.utils.aoa_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Alumnes");
-        XLSX.writeFile(wb, "plantilla_alumnes.xlsx");
     }
 
-    function exportToCSV() {
-        let csv = "Codi_Alumne,Grup,Participacio,Competencies,Incompatible,Absentista,Preferencies\n";
-        currentGroups.forEach((group, groupIdx) => {
+    function downloadTemplate() {
+        const headers = ["Codi Alumne", "Participacio", "Competencies", "Incompatible", "Absentista", "Preferències"];
+        const samples = [
+            ["Alumne_01", "Alt", "Altes", "Alumne_02-Alumne_05", "No", "Alumne_10"],
+            ["Alumne_02", "Mitjà", "Mitjanes", "Alumne_01", "No", ""],
+            ["Alumne_03", "Baix", "Baixes", "", "Si", ""]
+        ];
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...samples]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Dades");
+        XLSX.writeFile(wb, "plantilla_agrupacions.xlsx");
+    }
+
+    function exportResults() {
+        // Mateixes columnes que l'entrada
+        const data = [["Codi Alumne", "Grup", "Participacio", "Competencies", "Incompatible", "Absentista", "Preferències"]];
+        
+        currentGroups.forEach((group, idx) => {
             group.forEach(s => {
-                const p = revMapping.participation[s.participation] || "";
-                const c = revMapping.competence[s.competence] || "";
-                csv += `"${s.id}","${groupIdx + 1}","${p}","${c}","${s.incompatible.join("-")}","${s.absentee ? "Si" : "No"}","${s.preferences.join("-")}"\n`;
+                data.push([
+                    s.id,
+                    `Grup ${idx + 1}`,
+                    revMapping.participation[s.participation],
+                    revMapping.competence[s.competence],
+                    s.incompatible.join("-"),
+                    s.absentee ? "Si" : "No",
+                    s.preferences.join("-")
+                ]);
             });
         });
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "grups_generats.csv";
-        a.click();
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Resultats");
+        XLSX.writeFile(wb, "agrupacions_classe.xlsx");
     }
 </script>
 </body>
