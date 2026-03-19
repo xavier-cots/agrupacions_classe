@@ -249,13 +249,24 @@
         const preferred = parseInt(document.getElementById('preferredSize').value);
         const max = parseInt(document.getElementById('maxSize').value);
         
-        // Calculem quants grups necessitem realment per respectar la mida ideal
-        // Si students.length / numGroups > max, haurem d'afegir un grup més
+        // --- CORRECCIÓ LÒGICA DE GRUPS ---
+        // Busquem el nombre mínim de grups necessari per no superar la mida màxima.
+        // Si fem servir la mida ideal (ex. 26/4 = 6.5 -> 7 grups), pot quedar un grup de 2.
+        // Però 26 caben en 6 grups si alguns són de 5. 26/6 = 4.3 (OK, no superem 5).
+        
         let numGroups = Math.ceil(students.length / preferred);
         
-        // Validació: si amb numGroups superem la mida màxima en tots els grups, incrementem numGroups
-        while (students.length / numGroups > max) {
-            numGroups++;
+        // Si el darrer grup és massa petit, comprovem si podem repartir els alumnes en menys grups
+        // sense superar el màxim permès.
+        while (numGroups > 1) {
+            let potentialMinSize = Math.floor(students.length / (numGroups - 1));
+            let potentialMaxSize = Math.ceil(students.length / (numGroups - 1));
+            
+            if (potentialMaxSize <= max) {
+                numGroups--; // Reduïm grups per absorbir el grup "coall"
+            } else {
+                break; // No podem reduir més sense saltar-nos el màxim
+            }
         }
 
         let groups = Array.from({ length: numGroups }, () => []);
@@ -266,20 +277,17 @@
                 let score = 0;
                 
                 // Penalització forta per incompatibilitat
-                if (g.some(m => student.incompatible.includes(m.id) || m.incompatible.includes(student.id))) score -= 2000;
+                if (g.some(m => student.incompatible.includes(m.id) || m.incompatible.includes(student.id))) score -= 5000;
                 
-                // Prioritat: omplir fins a la mida ideal
-                if (g.length < preferred) {
-                    score += 500;
-                } 
-                // Permetre fins a la mida màxima si és necessari
-                else if (g.length < max) {
-                    score += 100;
-                }
-                // Penalització si ja estem al màxim
-                else {
-                    score -= 5000;
-                }
+                // Prioritat d'equilibri: Afavorir grups amb menys gent
+                score += (100 - g.length * 20);
+
+                // Si estem per sota del nombre d'alumnes per grup teòric, donem prioritat
+                const targetAvg = students.length / numGroups;
+                if (g.length < targetAvg) score += 200;
+
+                // Penalització si ens passem del màxim
+                if (g.length >= max) score -= 10000;
 
                 // Preferències d'afinitat
                 if (g.some(m => student.preferences.includes(m.id))) score += 50;
@@ -287,16 +295,16 @@
                 // Equilibri d'absentisme
                 if (student.absentee) {
                     const absCount = g.filter(m => m.absentee).length;
-                    score -= (absCount * 100);
+                    score -= (absCount * 150);
                 }
 
-                // Equilibri de competències (intentem que la mitjana del grup no s'allunyi de la mitjana de l'alumne)
+                // Equilibri de competències
                 if (g.length > 0) {
                     const avgComp = g.reduce((acc, m) => acc + m.competence, 0) / g.length;
-                    score -= Math.abs(avgComp - student.competence) * 10;
+                    score -= Math.abs(avgComp - student.competence) * 15;
                 }
 
-                return { index: i, score: score - (g.length * 2) }; // El factor final ajuda a equilibrar quantitats
+                return { index: i, score: score };
             });
 
             scores.sort((a, b) => b.score - a.score);
@@ -356,7 +364,10 @@
         document.getElementById('manualId').value = "";
         updateInterface();
         if (currentGroups.length > 0) {
-            currentGroups.reduce((a, b) => a.length <= b.length ? a : b).push(student);
+            // Afegim al grup més buit
+            let minGroup = currentGroups[0];
+            currentGroups.forEach(g => { if(g.length < minGroup.length) minGroup = g; });
+            minGroup.push(student);
             renderGroups();
         } else generateGroups();
     }
