@@ -161,6 +161,10 @@
     const MAX_HISTORY = 10;
 
     const mapping = { "Alt": 3, "Altes": 3, "Mitjà": 2, "Mitjanes": 2, "Baix": 1, "Baixes": 1, "Si": true, "No": false, "SÍ": true, "SI": true };
+    const revMapping = {
+        participation: { 3: "Alt", 2: "Mitjà", 1: "Baix" },
+        competence: { 3: "Altes", 2: "Mitjanes", 1: "Baixes" }
+    };
 
     // --- SISTEMA DESFER ---
     function saveToHistory() {
@@ -427,12 +431,26 @@
     }
 
     function exportToCSV() {
-        let csv = "Codi_Alumne,Grup\n";
-        currentGroups.forEach((g, i) => g.forEach(s => csv += `"${s.id}","${i+1}"\n`));
-        const blob = new Blob([csv], { type: 'text/csv' });
+        // Encapçalaments incloent tots els camps originals i el grup
+        let csv = "Codi_Alumne,Grup,Participacio,Competencies,Incompatible,Absentista,Preferencies\n";
+        
+        currentGroups.forEach((group, groupIdx) => {
+            group.forEach(s => {
+                // Convertim valors numèrics de nou a etiquetes de text per coherència
+                const partLabel = revMapping.participation[s.participation] || "";
+                const compLabel = revMapping.competence[s.competence] || "";
+                const incompStr = s.incompatible.join("-");
+                const absLabel = s.absentee ? "Si" : "No";
+                const prefStr = s.preferences.join("-");
+                
+                csv += `"${s.id}","${groupIdx + 1}","${partLabel}","${compLabel}","${incompStr}","${absLabel}","${prefStr}"\n`;
+            });
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "agrupacions.csv";
+        a.download = "agrupacions_completes.csv";
         a.click();
     }
 </script>
