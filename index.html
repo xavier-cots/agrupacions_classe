@@ -125,13 +125,12 @@
                 id: String(row.Codi_Alumne || row['codi alumne'] || row['Codi Alumne'] || "N/A"),
                 participation: valMap[row.Participacio] || 2,
                 competence: valMap[row.Competencies] || 2,
-                incompatible: row.Incompatible ? String(row.Incompatible).split(/[,;]/).map(x => x.trim()) : [],
+                incompatible: row.Incompatible ? String(row.Incompatible).split(/[,;]/).map(x => x.trim()).filter(x => x) : [],
                 absentee: valMap[row.Absentista] === true || String(row.Absentista).toLowerCase() === 'si' || String(row.Absentista).toLowerCase() === 'sí',
-                preferences: row.Preferencies ? String(row.Preferencies).split(/[,;]/).map(x => x.trim()) : []
+                preferences: row.Preferencies ? String(row.Preferencies).split(/[,;]/).map(x => x.trim()).filter(x => x) : []
             };
             students.push(s);
 
-            // Reconeixement de grup preexistent
             let gName = row.Grup || row.Equip;
             if (gName !== undefined && gName !== null && gName !== "") {
                 if (!initialGrouping[gName]) initialGrouping[gName] = [];
@@ -156,18 +155,22 @@
         if (students.length === 0) return;
         
         const ideal = parseInt(document.getElementById('idealSize').value) || 4;
-        const max = parseInt(document.getElementById('maxSize').value) || 5;
+        const maxSize = parseInt(document.getElementById('maxSize').value) || 5;
 
-        // Càlcul del nombre de grups ideal basat en la mida ideal
-        let numGroups = Math.round(students.length / ideal);
+        // Càlcul de nombre de grups per complir estrictament les regles de mida
+        // Busquem un nombre de grups N tal que students.length / N estigui entre ideal i max si és possible, 
+        // prioritzant que la mida s'acosti a l'ideal i no superi el max.
+        let numGroups = Math.floor(students.length / ideal);
         if (numGroups === 0) numGroups = 1;
 
-        // Ajustar numGroups per assegurar que no superem el 'max' per grup
-        while (students.length / numGroups > max) {
+        // Si dividint per numGroups superem el MAX, hem d'augmentar el nombre de grups
+        while (students.length / numGroups > maxSize) {
             numGroups++;
         }
-        // Ajustar per assegurar que no quedin alumnes sols (mínim 2 si n'hi ha prou)
-        while (numGroups > 1 && students.length / numGroups < 2) {
+        
+        // Si dividint per numGroups queda massa gent sola (mides d'1 o 2 quan l'ideal és 4)
+        // intentem reduir grups sempre que no passem del MAX
+        while (numGroups > 1 && (students.length / (numGroups - 1)) <= maxSize && (students.length / numGroups) < (ideal - 1)) {
             numGroups--;
         }
         
@@ -176,9 +179,9 @@
         // Barreja aleatòria per a regeneració
         let pool = [...students].sort(() => Math.random() - 0.5);
         
-        // Ordenar per dificultat de col·locació (absentistes i incompatibilitats primer)
+        // Ordenar per dificultat (absentistes i múltiples incompatibilitats primer)
         pool.sort((a,b) => {
-            if (a.absentee !== b.absentee) return b.absentee ? 1 : -1;
+            if (a.absentee !== b.absentee) return b.absentee ? -1 : 1;
             return b.incompatible.length - a.incompatible.length;
         });
 
@@ -187,35 +190,35 @@
             let minScore = Infinity;
 
             for(let i=0; i<groups.length; i++) {
-                // No permetre superar la mida màxima si hi ha altres opcions
-                if(groups[i].length >= max) continue;
+                // Forçar límit de mida màxima
+                if(groups[i].length >= maxSize) continue;
                 
                 let score = 0;
                 
                 // 1. Incompatibilitats (Màxima Prioritat)
+                // Comprovem si el nou estudiant és incompatible amb algú del grup O si algú del grup és incompatible amb ell
                 const hasIncompatible = groups[i].some(m => 
                     student.incompatible.includes(m.id) || m.incompatible.includes(student.id)
                 );
-                if (hasIncompatible) score += 5000;
+                if (hasIncompatible) score += 10000;
 
-                // 2. Heterogeneïtat (Equitat)
-                // Repartir absentistes equitativament
+                // 2. Heterogeneïtat i Equitat
                 const absCount = groups[i].filter(m => m.absentee).length;
-                score += absCount * 100;
+                score += absCount * 200; // Penalitzem posar massa absentistes junts
                 
-                // Balanç de competències i participació
                 const avgComp = groups[i].length ? (groups[i].reduce((acc, m) => acc + m.competence, 0) / groups[i].length) : 2;
                 const avgPart = groups[i].length ? (groups[i].reduce((acc, m) => acc + m.participation, 0) / groups[i].length) : 2;
                 
-                score += Math.abs(avgComp - student.competence) * 10;
-                score += Math.abs(avgPart - student.participation) * 10;
+                // Volem que la mitjana del grup no s'allunyi massa del perfil de l'alumne per mantenir equilibri
+                score += Math.abs(avgComp - student.competence) * 20;
+                score += Math.abs(avgPart - student.participation) * 20;
 
                 // 3. Preferències
                 const hasPreference = groups[i].some(m => student.preferences.includes(m.id));
-                if (hasPreference) score -= 20;
+                if (hasPreference) score -= 50;
 
-                // Mantenir grups equilibrats en volum d'alumnes
-                score += groups[i].length * 50;
+                // Mantenir el volum de grups equilibrat (que no n'hi hagi un de 5 i un de 2)
+                score += groups[i].length * 100;
 
                 if(score < minScore) {
                     minScore = score;
@@ -223,8 +226,8 @@
                 }
             }
 
-            // Fallback si per alguna raó tots estan "plens" teòricament
             if(bestG === -1) {
+                // Si per mides màximes no hem trobat lloc (rar), busquem el més buit
                 bestG = groups.indexOf(groups.reduce((a, b) => a.length < b.length ? a : b));
             }
             groups[bestG].push(student);
@@ -259,7 +262,7 @@
             listDiv.className = "space-y-2 flex-1";
 
             group.forEach(s => {
-                // Detecció d'incompatibilitat en el grup actual
+                // Comprovació exhaustiva d'incompatibilitats en el grup actual
                 const hasConflict = group.some(m => 
                     m.id !== s.id && (s.incompatible.includes(m.id) || m.incompatible.includes(s.id))
                 );
@@ -301,14 +304,12 @@
         const [student] = currentGroups[fromG].splice(sIdx, 1);
         currentGroups[toG].push(student);
         
-        // Netejar grups buits si cal
         if (currentGroups[fromG].length === 0) currentGroups.splice(fromG, 1);
         
         saveHistory();
         renderGroups();
     }
 
-    // --- UTILITATS ---
     function saveHistory() {
         history.push(JSON.stringify(currentGroups));
         document.getElementById('undoBtn').disabled = history.length <= 1;
@@ -352,7 +353,6 @@
         document.getElementById('m_abs').checked = false;
         updateStats();
         
-        // Afegir al grup més buit
         if (currentGroups.length === 0) {
             currentGroups.push([newStudent]);
         } else {
@@ -367,10 +367,11 @@
     function downloadTemplate() {
         const data = [
             ["Codi_Alumne", "Participacio", "Competencies", "Incompatible", "Absentista", "Preferencies", "Grup"],
-            ["AL-001", "Alt", "Altes", "AL-002", "No", "AL-003", ""],
+            ["AL-001", "Alt", "Altes", "AL-002, AL-005", "No", "AL-003", ""],
             ["AL-002", "Mitjà", "Mitjanes", "AL-001", "Si", "", ""],
             ["AL-003", "Baix", "Baixes", "", "No", "", ""],
-            ["AL-004", "Mitjà", "Mitjanes", "", "No", "", ""]
+            ["AL-004", "Mitjà", "Mitjanes", "", "No", "", ""],
+            ["AL-005", "Alt", "Altes", "AL-001", "No", "", ""]
         ];
         const ws = XLSX.utils.aoa_to_sheet(data);
         const wb = XLSX.utils.book_new();
