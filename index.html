@@ -276,16 +276,23 @@
         const globalAvgComp = students.reduce((acc, s) => acc + s.competence, 0) / students.length;
         const globalAvgPart = students.reduce((acc, s) => acc + s.participation, 0) / students.length;
 
-        // Ordenem alumnes per "complexitat" (absentisme o moltes restriccions primer)
-        let sorted = [...students].sort((a, b) => {
-            const bRestriccions = b.incompatible.length + (b.absentee ? 5 : 0);
-            const aRestriccions = a.incompatible.length + (a.absentee ? 5 : 0);
-            return bRestriccions - aRestriccions;
-        });
+        // Introduïm aleatorietat barrejant els alumnes abans de l'assignació
+        // Però mantenint la lògica de prioritzar els més complexos
+        let sorted = [...students]
+            .map(value => ({ value, sort: Math.random() })) // Barreja ràndom inicial
+            .sort((a, b) => a.sort - b.sort)
+            .map(({ value }) => value)
+            .sort((a, b) => {
+                // Després apliquem la prioritat de complexitat
+                const bRestriccions = b.incompatible.length + (b.absentee ? 5 : 0);
+                const aRestriccions = a.incompatible.length + (a.absentee ? 5 : 0);
+                return bRestriccions - aRestriccions;
+            });
 
         sorted.forEach(student => {
             let scores = groups.map((g, i) => {
-                let score = 0;
+                // Factor de "soroll" aleatori per desempatar grups amb el mateix score
+                let score = Math.random() * 0.5; 
                 
                 // Prioritat 0: Mida
                 if (g.length >= targetSizes[i]) return { index: i, score: -1000000 };
@@ -299,7 +306,6 @@
                     const currentAvgComp = g.reduce((acc, m) => acc + m.competence, 0) / g.length;
                     const currentAvgPart = g.reduce((acc, m) => acc + m.participation, 0) / g.length;
                     
-                    // Penalitzem si afegir aquest alumne allunya massa el grup de la mitjana global
                     const newAvgComp = (g.reduce((acc, m) => acc + m.competence, 0) + student.competence) / (g.length + 1);
                     const newAvgPart = (g.reduce((acc, m) => acc + m.participation, 0) + student.participation) / (g.length + 1);
                     
@@ -310,7 +316,7 @@
                 // Equilibri d'absentisme
                 if (student.absentee) {
                     const absCount = g.filter(m => m.absentee).length;
-                    score -= (absCount * 1000); // Evitar concentrar absentistes
+                    score -= (absCount * 1000); 
                 }
 
                 // Prioritat 3: Preferències
@@ -321,6 +327,7 @@
                 return { index: i, score: score };
             });
 
+            // Ordenem per score (més alt millor)
             scores.sort((a, b) => b.score - a.score);
             groups[scores[0].index].push(student);
         });
@@ -431,12 +438,10 @@
     }
 
     function exportToCSV() {
-        // Encapçalaments incloent tots els camps originals i el grup
-        let csv = "Codi_Alumne,Participacio,Competencies,Incompatible,Absentista,Preferencies,Grup\n";
+        let csv = "Codi_Alumne,Grup,Participacio,Competencies,Incompatible,Absentista,Preferencies\n";
         
         currentGroups.forEach((group, groupIdx) => {
             group.forEach(s => {
-                // Convertim valors numèrics de nou a etiquetes de text per coherència
                 const partLabel = revMapping.participation[s.participation] || "";
                 const compLabel = revMapping.competence[s.competence] || "";
                 const incompStr = s.incompatible.join("-");
