@@ -11,7 +11,7 @@
         .dragging { opacity: 0.5; transform: scale(0.95); }
         .drop-target { border: 2px dashed #f59e0b !important; background-color: #fffbeb !important; }
         
-        /* Dashboard Layout: Evitem scroll global en escriptori */
+        /* Dashboard Layout */
         @media (min-width: 1024px) {
             body { overflow: hidden; height: 100vh; }
             #app { height: 100vh; display: flex; flex-direction: column; }
@@ -19,17 +19,20 @@
             .scrollable-panel { overflow-y: auto; height: 100%; padding-bottom: 2rem; }
         }
 
-        /* Amagar scrollbars però mantenir funcionalitat */
         .scrollable-panel::-webkit-scrollbar { width: 6px; }
         .scrollable-panel::-webkit-scrollbar-track { background: transparent; }
         .scrollable-panel::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .scrollable-panel::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+        /* Classes per al Modal */
+        .modal-active { opacity: 1 !important; pointer-events: auto !important; }
+        .modal-content-active { transform: scale(1) !important; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans">
 
 <div id="app" class="max-w-[1600px] mx-auto w-full px-4 md:px-6">
-    <!-- Capçalera Compacta -->
+    <!-- Capçalera -->
     <header class="py-4 flex flex-col md:flex-row justify-between items-center border-b border-slate-200 mb-4 bg-slate-50 sticky top-0 z-10">
         <div class="text-center md:text-left">
             <h1 class="text-2xl font-bold text-indigo-700">Agrupacions de Classe</h1>
@@ -49,9 +52,8 @@
 
     <div class="dashboard-container grid grid-cols-1 lg:grid-cols-12 gap-6 h-full pb-6">
         
-        <!-- Columna Esquerra: Configuració (3/12) -->
+        <!-- Columna Esquerra -->
         <div class="lg:col-span-3 scrollable-panel space-y-5">
-            <!-- Càrrega de Fitxers -->
             <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                 <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <span class="w-5 h-5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-[10px]">1</span>
@@ -63,11 +65,9 @@
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     </div>
                     <p class="text-xs font-bold text-slate-700">Puja CSV o Excel</p>
-                    <p class="text-[10px] text-slate-400 mt-1">Formats: .csv, .xlsx, .xls</p>
                 </div>
             </section>
 
-            <!-- Afegir Manual -->
             <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                 <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <span class="w-5 h-5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-[10px]">+</span>
@@ -96,7 +96,6 @@
                 </div>
             </section>
 
-            <!-- Controls Generació -->
             <section class="bg-indigo-700 p-5 rounded-2xl shadow-lg shadow-indigo-200 text-white">
                 <h2 class="text-sm font-bold text-indigo-200 uppercase tracking-widest mb-4 flex items-center gap-2">
                     <span class="w-5 h-5 bg-white text-indigo-700 rounded-full flex items-center justify-center text-[10px]">2</span>
@@ -123,14 +122,13 @@
             </section>
         </div>
 
-        <!-- Columna Dreta: Visor de Grups (9/12) -->
+        <!-- Columna Dreta -->
         <div class="lg:col-span-9 scrollable-panel">
             <div id="emptyState" class="h-full flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-dashed border-slate-200 p-10 text-center">
                 <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
                     <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 005.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 </div>
                 <h3 class="text-xl font-bold text-slate-400">Encara no hi ha grups</h3>
-                <p class="text-sm text-slate-300 max-w-xs mx-auto">Importa un fitxer o afegeix alumnes manualment per visualitzar les agrupacions aquí.</p>
                 <p id="counterLabel" class="text-xs text-indigo-500 mt-4 font-bold"></p>
             </div>
 
@@ -139,25 +137,23 @@
                     <h2 class="text-3xl font-black text-slate-800 tracking-tight">Panell de Grups</h2>
                     <span id="statsLabel" class="text-[11px] font-bold bg-white border border-slate-200 px-4 py-1.5 rounded-full text-slate-500 shadow-sm"></span>
                 </div>
-                <div id="groupsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                    <!-- Els grups es carreguen aquí -->
-                </div>
+                <div id="groupsGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal de Confirmació Personalitzat -->
-<div id="customModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-    <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl transform scale-95 transition-transform duration-300">
-        <div id="modalIcon" class="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 mx-auto bg-amber-50 text-amber-500">
+<!-- Modal de Confirmació -->
+<div id="customModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
+    <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl transform scale-95 transition-all duration-300">
+        <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 mx-auto bg-amber-50 text-amber-500">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
         </div>
-        <h3 id="modalTitle" class="text-xl font-bold text-slate-800 text-center mb-2">Estàs segur?</h3>
-        <p id="modalDesc" class="text-slate-500 text-center text-sm mb-8 leading-relaxed">Aquesta acció no es pot desfer. Es perdran totes les dades actuals.</p>
+        <h3 class="text-xl font-bold text-slate-800 text-center mb-2">Reiniciar dades?</h3>
+        <p class="text-slate-500 text-center text-sm mb-8 leading-relaxed">Es borraran tots els alumnes carregats i les agrupacions actuals.</p>
         <div class="flex gap-3">
-            <button onclick="closeModal()" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition-colors">Cancel·lar</button>
-            <button id="modalConfirmBtn" class="flex-1 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-lg shadow-amber-200 transition-all">Sí, esborrar</button>
+            <button id="cancelBtn" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-500 font-bold text-sm hover:bg-slate-50 transition-colors">Cancel·lar</button>
+            <button id="confirmResetBtn" class="flex-1 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-lg shadow-amber-200 transition-all">Sí, esborrar</button>
         </div>
     </div>
 </div>
@@ -167,28 +163,18 @@
     let currentGroups = [];
     const mapping = { "Alt": 3, "Altes": 3, "Mitjà": 2, "Mitjanes": 2, "Baix": 1, "Baixes": 1, "Si": true, "No": false, "SÍ": true, "SI": true };
 
-    // --- GESTIÓ DE FITXERS ---
+    // --- FITXERS ---
     document.getElementById('fileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         const extension = file.name.split('.').pop().toLowerCase();
-
         reader.onload = function(e) {
-            const data = e.target.result;
-            if (extension === 'csv') {
-                processCSV(data);
-            } else {
-                processExcel(data);
-            }
+            if (extension === 'csv') processCSV(e.target.result);
+            else processExcel(e.target.result);
         };
-
-        if (extension === 'csv') {
-            reader.readAsText(file);
-        } else {
-            reader.readAsArrayBuffer(file);
-        }
+        if (extension === 'csv') reader.readAsText(file);
+        else reader.readAsArrayBuffer(file);
     });
 
     function processExcel(buffer) {
@@ -201,47 +187,21 @@
     function processCSV(text) {
         students = [];
         const lines = text.split(/\r?\n/);
-        let preassignedGroups = new Map();
-
         for (let i = 1; i < lines.length; i++) {
             let line = lines[i].trim();
             if (!line) continue;
-            
-            // Suport tant per comes com per punts i coma
             const separator = line.includes(';') ? ';' : ',';
             const cols = line.match(/(".*?"|[^,;]+|(?<=[,;])(?=[,;])|(?<=[,;])$)/g) || [];
             const cleanCols = cols.map(c => c.trim().replace(/^"|"$/g, ''));
-
-            const student = createStudentObject(
-                cleanCols[0], 
-                cleanCols[1], 
-                cleanCols[2], 
-                cleanCols[3], 
-                cleanCols[4], 
-                cleanCols[5],
-                cleanCols[6] ? parseInt(cleanCols[6]) : null
-            );
-            
-            students.push(student);
-            
-            if (student.assignedGroup !== null && !isNaN(student.assignedGroup)) {
-                if (!preassignedGroups.has(student.assignedGroup)) preassignedGroups.set(student.assignedGroup, []);
-                preassignedGroups.get(student.assignedGroup).push(student);
-            }
+            students.push(createStudentObject(cleanCols[0], cleanCols[1], cleanCols[2], cleanCols[3], cleanCols[4], cleanCols[5], cleanCols[6] ? parseInt(cleanCols[6]) : null));
         }
         updateInterface();
-        if (preassignedGroups.size > 0) {
-            currentGroups = Array.from(preassignedGroups.entries()).sort((a,b)=>a[0]-b[0]).map(e=>e[1]);
-            renderGroups();
-        } else {
-            generateGroups();
-        }
+        generateGroups();
     }
 
     function createStudentObject(id, part, comp, incomp, abs, pref, group) {
-        let cleanId = String(id).split(/[;,]/)[0].replace(/^"|"$/g, '').trim();
         return {
-            id: cleanId || "Sense Nom",
+            id: id || "Sense Nom",
             participation: mapping[part] || 2,
             competence: mapping[comp] || 2,
             incompatible: incomp ? String(incomp).split(/[-|/]/).map(x => x.trim()) : [],
@@ -251,33 +211,16 @@
         };
     }
 
-    // --- UI HELPERS ---
     function updateInterface() {
-        if (students.length > 0) {
-            document.getElementById('counterLabel').innerText = `${students.length} alumnes carregats`;
-        }
+        document.getElementById('counterLabel').innerText = students.length > 0 ? `${students.length} alumnes carregats` : "";
     }
 
-    function downloadTemplate() {
-        const csv = "Codi_Alumne,Participacio,Competencies,Incompatible,Absentista,Preferencies\nMarc B. L.,Alt,Altes,,No,\nAnna G.,Mitjà,Mitjanes,,No,\nJoan P.,Baix,Baixes,,Si,";
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute("download", `plantilla_alumnes.csv`);
-        link.click();
-    }
-
-    // --- LÒGICA DE GRUPS ---
+    // --- GRUPS ---
     function generateGroups() {
+        if (students.length === 0) return;
         const preferred = parseInt(document.getElementById('preferredSize').value);
         const max = parseInt(document.getElementById('maxSize').value);
-        if (students.length === 0) return;
-
-        let numGroups = Math.floor(students.length / preferred);
-        let remainder = students.length % preferred;
-        if (remainder > 0 && remainder > (numGroups * (max - preferred))) numGroups++;
-        if (numGroups === 0) numGroups = 1;
-
+        let numGroups = Math.max(1, Math.ceil(students.length / preferred));
         let groups = Array.from({ length: numGroups }, () => []);
         let sorted = [...students].sort((a, b) => (b.competence + b.participation) - (a.competence + a.participation));
 
@@ -288,15 +231,13 @@
                 if (g.length < preferred) score += 100;
                 else if (g.length < max) score += 10;
                 else score -= 500;
-                score -= (g.length * 5);
                 if (g.some(m => student.preferences.includes(m.id))) score += 40;
                 if (student.absentee) score -= (g.filter(m => m.absentee).length * 15);
-                return { index: i, score };
+                return { index: i, score: score - (g.length * 5) };
             });
             scores.sort((a, b) => b.score - a.score);
             groups[scores[0].index].push(student);
         });
-
         currentGroups = groups;
         renderGroups();
     }
@@ -305,75 +246,41 @@
         document.getElementById('emptyState').classList.add('hidden');
         document.getElementById('resultsArea').classList.remove('hidden');
         document.getElementById('exportBtn').classList.remove('hidden');
-        
         const grid = document.getElementById('groupsGrid');
         grid.innerHTML = '';
         
         currentGroups.forEach((group, gIndex) => {
             const container = document.createElement('div');
             container.className = 'bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group/card';
-            container.dataset.index = gIndex;
-            
             container.addEventListener('dragover', e => { e.preventDefault(); container.classList.add('drop-target'); });
             container.addEventListener('dragleave', () => container.classList.remove('drop-target'));
             container.addEventListener('drop', e => {
                 e.preventDefault();
                 container.classList.remove('drop-target');
-                const studentId = e.dataTransfer.getData('text/plain');
-                const fromGroupIndex = parseInt(e.dataTransfer.getData('fromGroup'));
-                moveStudent(studentId, fromGroupIndex, gIndex);
+                moveStudent(e.dataTransfer.getData('text/plain'), parseInt(e.dataTransfer.getData('fromGroup')), gIndex);
             });
 
-            let html = `
-                <div class="bg-indigo-50/50 px-5 py-3 border-b border-indigo-100 flex justify-between items-center group-hover/card:bg-indigo-50 transition-colors">
-                    <span class="font-black text-indigo-700 uppercase text-[10px] tracking-tighter">Equip ${String(gIndex + 1).padStart(2, '0')}</span>
-                    <span class="text-[10px] bg-white text-indigo-400 px-2 py-0.5 rounded-full font-bold shadow-sm">${group.length} Pers.</span>
-                </div>
-                <div class="p-4 space-y-2 min-h-[60px]">
-            `;
-
+            let html = `<div class="bg-indigo-50/50 px-5 py-3 border-b border-indigo-100 flex justify-between items-center"><span class="font-black text-indigo-700 uppercase text-[10px]">Equip ${gIndex + 1}</span><span class="text-[10px] bg-white text-indigo-400 px-2 py-0.5 rounded-full font-bold">${group.length} Pers.</span></div><div class="p-4 space-y-2 min-h-[60px]">`;
             group.forEach(student => {
                 const hasConflict = group.some(other => student.incompatible.includes(other.id) || other.incompatible.includes(student.id));
-                const conflictClass = hasConflict ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-100 bg-slate-50 text-slate-700';
-
-                html += `
-                    <div draggable="true" 
-                         ondragstart="onDragStart(event, '${student.id}', ${gIndex})"
-                         ondragend="onDragEnd(event)"
-                         class="px-4 py-3 rounded-2xl border cursor-move transition-all active:scale-95 ${conflictClass} flex justify-between items-center group/item hover:border-indigo-200">
-                        <span class="text-xs font-bold">${student.id}</span>
-                        <div class="flex gap-1.5">
-                            ${student.absentee ? '<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>' : ''}
-                            ${hasConflict ? '<span class="text-[10px]">⚠️</span>' : ''}
-                        </div>
-                    </div>
-                `;
+                html += `<div draggable="true" ondragstart="onDragStart(event, '${student.id}', ${gIndex})" ondragend="onDragEnd(event)" class="px-4 py-3 rounded-2xl border cursor-move transition-all ${hasConflict ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-100 bg-slate-50'} flex justify-between items-center text-xs font-bold"><span>${student.id}</span>${hasConflict ? '<span>⚠️</span>' : ''}</div>`;
             });
-
-            html += `</div>`;
-            container.innerHTML = html;
+            container.innerHTML = html + `</div>`;
             grid.appendChild(container);
         });
-
-        const avg = (students.length / currentGroups.length).toFixed(1);
-        document.getElementById('statsLabel').innerText = `${currentGroups.length} Equips • Mitjana: ${avg}`;
+        document.getElementById('statsLabel').innerText = `${currentGroups.length} Equips • Mitjana: ${(students.length / currentGroups.length).toFixed(1)}`;
     }
 
-    function onDragStart(e, studentId, fromIndex) {
-        e.dataTransfer.setData('text/plain', studentId);
-        e.dataTransfer.setData('fromGroup', fromIndex);
-        e.target.classList.add('dragging');
-    }
-
+    function onDragStart(e, id, idx) { e.dataTransfer.setData('text/plain', id); e.dataTransfer.setData('fromGroup', idx); e.target.classList.add('dragging'); }
     function onDragEnd(e) { e.target.classList.remove('dragging'); }
-
-    function moveStudent(studentId, fromIdx, toIdx) {
-        if (fromIdx === toIdx) return;
-        const studentIdx = currentGroups[fromIdx].findIndex(s => s.id === studentId);
-        if (studentIdx === -1) return;
-        const [student] = currentGroups[fromIdx].splice(studentIdx, 1);
-        currentGroups[toIdx].push(student);
-        renderGroups();
+    function moveStudent(id, from, to) {
+        if (from === to) return;
+        const sIdx = currentGroups[from].findIndex(s => s.id === id);
+        if (sIdx > -1) {
+            const [student] = currentGroups[from].splice(sIdx, 1);
+            currentGroups[to].push(student);
+            renderGroups();
+        }
     }
 
     function addManualStudent() {
@@ -384,64 +291,57 @@
         document.getElementById('manualId').value = "";
         updateInterface();
         if (currentGroups.length > 0) {
-            let minGroup = currentGroups.reduce((prev, curr) => prev.length <= curr.length ? prev : curr);
-            minGroup.push(student);
+            currentGroups.reduce((a, b) => a.length <= b.length ? a : b).push(student);
             renderGroups();
-        } else {
-            generateGroups();
-        }
+        } else generateGroups();
     }
 
-    // --- SISTEMA DE MODALS ---
+    // --- MODAL FIX ---
     function showResetConfirm() {
         const modal = document.getElementById('customModal');
-        const confirmBtn = document.getElementById('modalConfirmBtn');
-        
-        modal.classList.remove('pointer-events-none');
-        modal.classList.add('opacity-100');
-        modal.firstElementChild.classList.remove('scale-95');
-        modal.firstElementChild.classList.add('scale-100');
-
-        confirmBtn.onclick = () => {
-            resetApp();
-            closeModal();
-        };
+        modal.classList.add('modal-active');
+        modal.firstElementChild.classList.add('modal-content-active');
     }
 
     function closeModal() {
         const modal = document.getElementById('customModal');
-        modal.classList.add('opacity-0');
-        modal.classList.add('pointer-events-none');
-        modal.firstElementChild.classList.add('scale-95');
-        modal.firstElementChild.classList.remove('scale-100');
+        modal.classList.remove('modal-active');
+        modal.firstElementChild.classList.remove('modal-content-active');
     }
 
-    function resetApp() {
+    document.getElementById('cancelBtn').onclick = closeModal;
+    document.getElementById('confirmResetBtn').onclick = () => {
         students = [];
         currentGroups = [];
         document.getElementById('resultsArea').classList.add('hidden');
         document.getElementById('emptyState').classList.remove('hidden');
         document.getElementById('exportBtn').classList.add('hidden');
-        document.getElementById('counterLabel').innerText = "";
         document.getElementById('fileInput').value = "";
+        updateInterface();
+        closeModal();
+    };
+
+    function downloadTemplate() {
+        const csv = "Codi_Alumne,Participacio,Competencies,Incompatible,Absentista,Preferencies\nMarc B.,Alt,Altes,,No,\nAnna G.,Mitjà,Mitjanes,,No,";
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "plantilla_alumnes.csv";
+        a.click();
     }
 
     function exportToCSV() {
         let csv = "Codi_Alumne,Participacio,Competencies,Incompatible,Absentista,Preferencies,Grup\n";
-        currentGroups.forEach((g, i) => {
-            g.forEach(s => {
-                csv += `"${s.id}","${getLabel(s.participation)}","${getLabel(s.competence)}","${s.incompatible.join('-')}","${s.absentee?'Si':'No'}","${s.preferences.join('-')}","${i+1}"\n`;
-            });
-        });
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute("download", `agrupacions_classe.csv`);
-        link.click();
+        currentGroups.forEach((g, i) => g.forEach(s => {
+            csv += `"${s.id}","${getLabel(s.participation)}","${getLabel(s.competence)}","${s.incompatible.join('-')}","${s.absentee?'Si':'No'}","${s.preferences.join('-')}","${i+1}"\n`;
+        }));
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "agrupacions.csv";
+        a.click();
     }
-
     function getLabel(v) { return v === 3 ? "Alt" : v === 2 ? "Mitjà" : "Baix"; }
 </script>
-
 </body>
 </html>
