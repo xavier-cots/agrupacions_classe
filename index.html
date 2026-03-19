@@ -16,7 +16,7 @@
     <!-- Capçalera -->
     <header class="mb-8 text-center">
         <h1 class="text-3xl font-bold text-indigo-700 mb-2">Agrupacions de Classe Intel·ligents</h1>
-        <p class="text-slate-500">Crea grups equilibrats respectant incompatibilitats, nivells i preferències.</p>
+        <p class="text-slate-500">Configuració personalitzada segons ràtios preferents i excepcions.</p>
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -32,24 +32,35 @@
                     <div class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:border-indigo-400 transition-colors cursor-pointer relative">
                         <input type="file" id="csvInput" accept=".csv" class="absolute inset-0 opacity-0 cursor-pointer">
                         <p class="text-sm text-slate-600">Arrossega un fitxer .csv o fes clic aquí</p>
-                        <p class="text-xs text-slate-400 mt-1">Codi, Participació, Competències, Incompatible, Absentista, Preferències</p>
+                        <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold">Codi, Participació, Competències, Incompatible, Absentista, Preferències</p>
                     </div>
                     
-                    <div class="flex gap-2">
-                        <button onclick="downloadTemplate()" class="text-xs text-indigo-600 hover:underline">Descarregar plantilla CSV</button>
+                    <div class="flex flex-col gap-2">
+                        <button onclick="downloadTemplate()" class="text-xs text-indigo-600 hover:underline text-left">Descarregar plantilla buida</button>
                     </div>
                 </div>
             </section>
 
             <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h2 class="text-xl font-semibold mb-4">2. Configuració</h2>
+                <h2 class="text-xl font-semibold mb-4">2. Configuració Grups</h2>
                 <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Nombre de grups desitjats</label>
-                        <input type="number" id="numGroups" value="4" min="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-tight">Mida preferent (Alumnes/Grup)</label>
+                            <input type="number" id="preferredSize" value="4" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <p class="text-[10px] text-slate-400 mt-1 italic">L'objectiu principal de l'algoritme.</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase tracking-tight">Mida màxima en cas d'excepció</label>
+                            <input type="number" id="maxSize" value="5" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <p class="text-[10px] text-slate-400 mt-1 italic">Límit per encabir alumnes sense crear nous grups.</p>
+                        </div>
                     </div>
                     <button onclick="generateGroups()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all transform active:scale-95 shadow-lg shadow-indigo-200">
                         Generar Grups
+                    </button>
+                    <button id="exportBtn" onclick="exportToCSV()" class="hidden w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all transform active:scale-95 shadow-lg shadow-emerald-200">
+                        Exportar Grups (CSV)
                     </button>
                 </div>
             </section>
@@ -61,13 +72,13 @@
                 <div class="text-slate-300 mb-4">
                     <svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 </div>
-                <h3 class="text-lg font-medium text-slate-600">Encara no hi ha dades</h3>
-                <p class="text-slate-400">Puja un fitxer CSV per començar a organitzar la teva classe.</p>
+                <h3 class="text-lg font-medium text-slate-600">Sense dades de classe</h3>
+                <p class="text-slate-400">Carrega un fitxer per visualitzar les agrupacions.</p>
             </div>
 
             <div id="resultsArea" class="hidden">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold text-slate-800">Grups Generats</h2>
+                    <h2 class="text-2xl font-bold text-slate-800">Agrupacions Actuals</h2>
                     <span id="statsLabel" class="text-sm bg-slate-200 px-3 py-1 rounded-full text-slate-600 font-medium"></span>
                 </div>
                 <div id="groupsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -80,6 +91,7 @@
 
 <script>
     let students = [];
+    let currentGroups = [];
     const mapping = { "Alt": 3, "Altes": 3, "Mitjà": 2, "Mitjanes": 2, "Baix": 1, "Baixes": 1, "Si": true, "No": false, "SÍ": true, "SI": true };
 
     document.getElementById('csvInput').addEventListener('change', function(e) {
@@ -98,9 +110,10 @@
         const lines = text.split('\n');
         
         students = [];
+        let preassignedGroups = new Map();
+
         for (let i = 1; i < lines.length; i++) {
             if (!lines[i].trim()) continue;
-            // Maneig de comes dins de cometes per llistes d'incompatibles o preferències
             const cols = lines[i].match(/(".*?"|[^,]+|(?<=,)(?=,)|(?<=,)$)/g) || [];
             const cleanCols = cols.map(c => c.trim().replace(/^"|"$/g, ''));
             
@@ -110,61 +123,104 @@
                 competence: mapping[cleanCols[2]] || 2,
                 incompatible: cleanCols[3] ? cleanCols[3].split(/[,;]/).map(id => id.trim()) : [],
                 absentee: mapping[cleanCols[4]] || false,
-                preferences: cleanCols[5] ? cleanCols[5].split(/[,;]/).map(id => id.trim()) : []
+                preferences: cleanCols[5] ? cleanCols[5].split(/[,;]/).map(id => id.trim()) : [],
+                assignedGroup: cleanCols[6] ? parseInt(cleanCols[6]) : null
             };
             students.push(student);
+            
+            if (student.assignedGroup !== null && !isNaN(student.assignedGroup)) {
+                if (!preassignedGroups.has(student.assignedGroup)) preassignedGroups.set(student.assignedGroup, []);
+                preassignedGroups.get(student.assignedGroup).push(student);
+            }
         }
         
         document.getElementById('emptyState').classList.add('hidden');
         document.getElementById('resultsArea').classList.remove('hidden');
-        generateGroups();
+
+        if (preassignedGroups.size > 0) {
+            currentGroups = Array.from(preassignedGroups.entries())
+                .sort((a, b) => a[0] - b[0])
+                .map(entry => entry[1]);
+            renderGroups(currentGroups);
+            document.getElementById('exportBtn').classList.remove('hidden');
+        } else {
+            generateGroups();
+        }
     }
 
     function generateGroups() {
-        const numGroups = parseInt(document.getElementById('numGroups').value);
+        const preferredSize = parseInt(document.getElementById('preferredSize').value);
+        const maxSize = parseInt(document.getElementById('maxSize').value);
+        
         if (students.length === 0) return;
+        if (preferredSize > maxSize) {
+            alert("La mida preferent no pot ser superior a la màxima.");
+            return;
+        }
 
-        // 1. Inicialitzar grups
+        // Lògica de càlcul de grups:
+        // Intentem fer grups de la mida preferent.
+        // Si el residu és massa gran per a un sol grup, ajustem.
+        let numGroups = Math.floor(students.length / preferredSize);
+        
+        // Si hi ha residu, mirem si podem absorbir els alumnes en els grups existents sense passar el màxim
+        let remainder = students.length % preferredSize;
+        if (remainder > 0) {
+            const extraCapacityAvailable = numGroups * (maxSize - preferredSize);
+            if (remainder > extraCapacityAvailable) {
+                // Si no caben repartits, necessitem un grup més (que serà més petit que el preferent)
+                numGroups++;
+            }
+        }
+        
+        // Cas especial: si surten 0 grups (per ràtios molt altes en classes molt petites)
+        if (numGroups === 0 && students.length > 0) numGroups = 1;
+
         let groups = Array.from({ length: numGroups }, () => []);
-
-        // 2. Ordenar alumnes per nivell total (descendent)
         let sortedStudents = [...students].sort((a, b) => 
             (b.competence + b.participation) - (a.competence + a.participation)
         );
 
-        // 3. Repartiment amb lògica de prioritat
         sortedStudents.forEach(student => {
             let scores = [];
-
             for (let i = 0; i < numGroups; i++) {
                 let score = 0;
                 
-                // RESTRICCIÓ: Incompatibilitat (Penalització màxima)
+                // RESTRICCIONS
                 const hasConflict = groups[i].some(member => 
                     student.incompatible.includes(member.id) || member.incompatible.includes(student.id)
                 );
                 if (hasConflict) score -= 1000;
+                
+                // MIDA (Prioritzar grups que no hagin arribat al preferent)
+                if (groups[i].length < preferredSize) {
+                    score += 100;
+                } else if (groups[i].length < maxSize) {
+                    score += 10; // Permetre fins al màxim però amb menys prioritat
+                } else {
+                    score -= 500; // Penalitzar passar del màxim si hi ha opcions
+                }
+                
+                // Repartiment equilibrat
+                score -= (groups[i].length * 5);
 
-                // EQUILIBRI: Mida del grup (Prioritzar grups més buits)
-                score -= (groups[i].length * 10);
-
-                // PREFERÈNCIA: Si algun amic ja hi és
+                // AFINITATS
                 const hasFriend = groups[i].some(member => student.preferences.includes(member.id));
-                if (hasFriend) score += 50; // Bonus per preferència
-
-                // EQUILIBRI: Absentisme (repartir-los)
+                if (hasFriend) score += 40;
+                
+                // ABSENTISME
                 const numAbsentees = groups[i].filter(m => m.absentee).length;
-                if (student.absentee) score -= (numAbsentees * 20);
+                if (student.absentee) score -= (numAbsentees * 15);
 
                 scores.push({ index: i, score: score });
             }
-
-            // Ordenar per millor puntuació i triar el millor grup
             scores.sort((a, b) => b.score - a.score);
             groups[scores[0].index].push(student);
         });
 
+        currentGroups = groups;
         renderGroups(groups);
+        document.getElementById('exportBtn').classList.remove('hidden');
     }
 
     function renderGroups(groups) {
@@ -173,46 +229,29 @@
         
         groups.forEach((group, index) => {
             const groupCard = document.createElement('div');
-            groupCard.className = 'bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow';
+            groupCard.className = 'bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm';
             
             let html = `
                 <div class="bg-indigo-50 px-4 py-2 border-b border-indigo-100 flex justify-between items-center">
-                    <h4 class="font-bold text-indigo-700">Grup ${index + 1}</h4>
-                    <span class="text-xs text-indigo-400 font-medium">${group.length} alumnes</span>
+                    <h4 class="font-bold text-indigo-700 uppercase text-[10px] tracking-widest">Grup ${index + 1}</h4>
+                    <span class="text-[10px] text-indigo-400 font-black">${group.length} ALUMNES</span>
                 </div>
-                <div class="p-4 space-y-3">
+                <div class="p-3 space-y-1.5">
             `;
 
             group.forEach(student => {
                 const hasConflict = group.some(other => 
                     student.incompatible.includes(other.id) || other.incompatible.includes(student.id)
                 );
-                
-                const satisfiedPreference = group.some(other => student.preferences.includes(other.id));
-                
-                const conflictClass = hasConflict ? 'border-red-400 bg-red-50 conflict-glow' : 'border-slate-100 bg-slate-50';
-                const absenteeBadge = student.absentee ? '<span class="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded ml-2">Absentista</span>' : '';
-                const prefIcon = satisfiedPreference ? '<span title="Preferència satisfeta" class="ml-1 text-blue-500">💙</span>' : '';
+                const conflictClass = hasConflict ? 'border-red-200 bg-red-50 text-red-700 font-bold' : 'border-slate-100 bg-slate-50 text-slate-700';
 
                 html += `
-                    <div class="p-3 rounded-xl border ${conflictClass} transition-all">
-                        <div class="flex justify-between items-start">
-                            <div class="flex flex-col">
-                                <div class="flex items-center">
-                                    <span class="font-bold text-slate-700">${student.id}</span>
-                                    ${prefIcon}
-                                    ${absenteeBadge}
-                                </div>
-                                <div class="text-[9px] text-slate-400 mt-0.5">
-                                    ${student.preferences.length > 0 ? 'Vol: ' + student.preferences.join(', ') : ''}
-                                </div>
-                            </div>
-                            <div class="flex gap-1 mt-1">
-                                <div class="w-2 h-2 rounded-full ${getScoreColor(student.competence)}" title="Competències"></div>
-                                <div class="w-2 h-2 rounded-full ${getScoreColor(student.participation)}" title="Participació"></div>
-                            </div>
+                    <div class="px-3 py-1.5 rounded-lg border ${conflictClass} flex justify-between items-center group transition-all hover:border-indigo-200">
+                        <span class="text-sm font-medium">${student.id}</span>
+                        <div class="flex gap-1 items-center">
+                            ${student.absentee ? '<span class="w-1.5 h-1.5 rounded-full bg-amber-400" title="Absentista"></span>' : ''}
+                            ${hasConflict ? '<span title="Conflicte d\'incompatibilitat" class="text-xs">⚠️</span>' : ''}
                         </div>
-                        ${hasConflict ? '<p class="text-[10px] text-red-500 mt-1 font-medium">⚠️ Conflicte detectat</p>' : ''}
                     </div>
                 `;
             });
@@ -222,23 +261,54 @@
             grid.appendChild(groupCard);
         });
 
-        document.getElementById('statsLabel').innerText = `${students.length} alumnes repartits`;
+        const avg = (students.length / groups.length).toFixed(1);
+        document.getElementById('statsLabel').innerText = `${groups.length} grups (Mitjana: ${avg})`;
     }
 
-    function getScoreColor(score) {
-        if (score >= 3) return 'bg-emerald-400';
-        if (score === 2) return 'bg-sky-400';
-        return 'bg-slate-300';
+    function exportToCSV() {
+        let csvContent = "Codi_Alumne,Participacio,Competencies,Incompatible_amb,Absentista,Preferencies,Grup_Assignat\n";
+        
+        currentGroups.forEach((group, groupIndex) => {
+            group.forEach(student => {
+                const row = [
+                    student.id,
+                    getLabelFromScore(student.participation),
+                    getLabelFromScore(student.competence),
+                    student.incompatible.join(';'),
+                    student.absentee ? "Si" : "No",
+                    student.preferences.join(';'),
+                    groupIndex + 1
+                ].map(val => `"${val}"`).join(",");
+                csvContent += row + "\n";
+            });
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `agrupacions_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function getLabelFromScore(score) {
+        if (score === 3) return "Alt";
+        if (score === 2) return "Mitjà";
+        return "Baix";
     }
 
     function downloadTemplate() {
-        const csvContent = "data:text/csv;charset=utf-8,Codi_Alumne,Participacio,Competencies,Incompatible_amb,Absentista,Preferencies\nALUM001,Alt,Altes,ALUM005,No,\"ALUM003, ALUM007\"\nALUM002,Baix,Mitjanes,,Si,\nALUM003,Mitja,Baixes,ALUM001,No,ALUM001\nALUM004,Alt,Altes,,No,ALUM002";
-        const encodedUri = encodeURI(csvContent);
+        const csvContent = "Codi_Alumne,Participacio,Competencies,Incompatible_amb,Absentista,Preferencies,Grup_Assignat\nALUM_01,Alt,Altes,,No,,\nALUM_02,Baix,Baixes,,No,,\nALUM_03,Mitja,Mitjanes,ALUM_01,No,,";
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "plantilla_alumnes_complet.csv");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "plantilla_agrupacions.csv");
         document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
     }
 </script>
 
