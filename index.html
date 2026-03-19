@@ -35,7 +35,6 @@
             <p class="text-xs text-slate-500 font-medium uppercase tracking-wider">Gestió intel·ligent d'equips</p>
         </div>
         <div class="flex items-center gap-3 mt-4 md:mt-0">
-            <!-- Botó Desfer -->
             <button id="undoBtn" onclick="undo()" disabled class="disabled:opacity-30 disabled:cursor-not-allowed text-[11px] font-bold text-slate-600 hover:bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
                 Desfer
@@ -142,7 +141,7 @@
     </div>
 </div>
 
-<!-- Modal Reset -->
+<!-- Modals i Scripts següents -->
 <div id="customModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
     <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl transform scale-95 transition-all duration-300">
         <h3 class="text-xl font-bold text-slate-800 text-center mb-2">Reiniciar dades?</h3>
@@ -157,7 +156,7 @@
 <script>
     let students = [];
     let currentGroups = [];
-    let history = []; // Per al botó Desfer
+    let history = []; 
     const MAX_HISTORY = 10;
 
     const mapping = { "Alt": 3, "Altes": 3, "Mitjà": 2, "Mitjanes": 2, "Baix": 1, "Baixes": 1, "Si": true, "No": false, "SÍ": true, "SI": true };
@@ -166,11 +165,9 @@
         competence: { 3: "Altes", 2: "Mitjanes", 1: "Baixes" }
     };
 
-    // --- SISTEMA DESFER ---
     function saveToHistory() {
         const state = JSON.stringify(currentGroups);
         if (history.length > 0 && history[history.length - 1] === state) return;
-        
         history.push(state);
         if (history.length > MAX_HISTORY + 1) history.shift();
         updateUndoButton();
@@ -254,80 +251,71 @@
 
         let numGroups = Math.floor(totalAlumnes / ideal);
         let residu = totalAlumnes % ideal;
-
-        if (residu > 0) {
-            let espaiDisponible = numGroups * (max - ideal);
-            if (residu > espaiDisponible) {
-                numGroups++;
-            }
-        }
-
+        if (residu > 0 && residu > (numGroups * (max - ideal))) numGroups++;
         if (numGroups === 0) numGroups = 1;
 
         const basePerGrup = Math.floor(totalAlumnes / numGroups);
         const extraAlumnes = totalAlumnes % numGroups;
-
         let targetSizes = Array(numGroups).fill(basePerGrup);
         for(let i=0; i<extraAlumnes; i++) targetSizes[i]++;
 
         let groups = Array.from({ length: numGroups }, () => []);
-        
-        // Calculem les mitjanes globals per l'equilibri
         const globalAvgComp = students.reduce((acc, s) => acc + s.competence, 0) / students.length;
         const globalAvgPart = students.reduce((acc, s) => acc + s.participation, 0) / students.length;
 
-        // Introduïm aleatorietat barrejant els alumnes abans de l'assignació
-        // Però mantenint la lògica de prioritzar els més complexos
+        // Barregem ràndom inicialment per variabilitat
         let sorted = [...students]
-            .map(value => ({ value, sort: Math.random() })) // Barreja ràndom inicial
+            .map(value => ({ value, sort: Math.random() }))
             .sort((a, b) => a.sort - b.sort)
             .map(({ value }) => value)
             .sort((a, b) => {
-                // Després apliquem la prioritat de complexitat
-                const bRestriccions = b.incompatible.length + (b.absentee ? 5 : 0);
-                const aRestriccions = a.incompatible.length + (a.absentee ? 5 : 0);
-                return bRestriccions - aRestriccions;
+                const bRest = b.incompatible.length + (b.absentee ? 5 : 0);
+                const aRest = a.incompatible.length + (a.absentee ? 5 : 0);
+                return bRest - aRest;
             });
 
         sorted.forEach(student => {
             let scores = groups.map((g, i) => {
-                // Factor de "soroll" aleatori per desempatar grups amb el mateix score
-                let score = Math.random() * 0.5; 
+                // Factor ràndom molt petit només per desempatar
+                let score = Math.random() * 0.1; 
                 
-                // Prioritat 0: Mida
-                if (g.length >= targetSizes[i]) return { index: i, score: -1000000 };
+                if (g.length >= targetSizes[i]) return { index: i, score: -10000000 };
                 
-                // Prioritat 1: Incompatibilitats (Crític)
-                const hasIncompatible = g.some(m => student.incompatible.includes(m.id) || m.incompatible.includes(student.id));
-                if (hasIncompatible) score -= 50000;
+                // INCOMPATIBILITATS: Pes extrem per evitar que l'atzar les guanyi
+                const checkId = student.id.toLowerCase().trim();
+                const hasIncompatible = g.some(m => {
+                    const mId = m.id.toLowerCase().trim();
+                    const studentList = student.incompatible.map(x => x.toLowerCase().trim());
+                    const memberList = m.incompatible.map(x => x.toLowerCase().trim());
+                    return studentList.includes(mId) || memberList.includes(checkId);
+                });
                 
-                // Prioritat 2: Equilibri (Heterogeneïtat)
+                if (hasIncompatible) score -= 1000000; // Penalització massiva
+                
                 if (g.length > 0) {
                     const currentAvgComp = g.reduce((acc, m) => acc + m.competence, 0) / g.length;
                     const currentAvgPart = g.reduce((acc, m) => acc + m.participation, 0) / g.length;
-                    
                     const newAvgComp = (g.reduce((acc, m) => acc + m.competence, 0) + student.competence) / (g.length + 1);
                     const newAvgPart = (g.reduce((acc, m) => acc + m.participation, 0) + student.participation) / (g.length + 1);
-                    
                     score -= Math.abs(newAvgComp - globalAvgComp) * 500;
                     score -= Math.abs(newAvgPart - globalAvgPart) * 300;
                 }
 
-                // Equilibri d'absentisme
-                if (student.absentee) {
-                    const absCount = g.filter(m => m.absentee).length;
-                    score -= (absCount * 1000); 
-                }
+                if (student.absentee) score -= (g.filter(m => m.absentee).length * 2000); 
 
-                // Prioritat 3: Preferències
-                if (g.some(m => student.preferences.includes(m.id) || m.preferences.includes(student.id))) {
-                    score += 200; 
+                // Preferències tenen un pes positiu mitjà
+                if (g.some(m => {
+                    const mId = m.id.toLowerCase().trim();
+                    const studentPrefs = student.preferences.map(x => x.toLowerCase().trim());
+                    const memberPrefs = m.preferences.map(x => x.toLowerCase().trim());
+                    return studentPrefs.includes(mId) || memberPrefs.includes(checkId);
+                })) {
+                    score += 150; 
                 }
 
                 return { index: i, score: score };
             });
 
-            // Ordenem per score (més alt millor)
             scores.sort((a, b) => b.score - a.score);
             groups[scores[0].index].push(student);
         });
@@ -363,15 +351,24 @@
                 <div class="p-4 space-y-2 min-h-[60px]">`;
             
             group.forEach(student => {
-                const hasIncompatible = group.some(other => student.incompatible.includes(other.id) || other.incompatible.includes(student.id));
+                // Comprovació en temps real per al warning visual
+                const checkId = student.id.toLowerCase().trim();
+                const hasIncompatible = group.some(other => {
+                    if (other.id === student.id) return false;
+                    const otherId = other.id.toLowerCase().trim();
+                    const studentIncomp = student.incompatible.map(x => x.toLowerCase().trim());
+                    const otherIncomp = other.incompatible.map(x => x.toLowerCase().trim());
+                    return studentIncomp.includes(otherId) || otherIncomp.includes(checkId);
+                });
+
                 html += `
                     <div draggable="true" ondragstart="onDragStart(event, '${student.id}', ${gIndex})" ondragend="onDragEnd(event)" 
-                         class="px-4 py-3 rounded-2xl border cursor-move transition-all ${hasIncompatible ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-100 bg-slate-50'} flex justify-between items-center text-xs font-bold">
+                         class="px-4 py-3 rounded-2xl border cursor-move transition-all ${hasIncompatible ? 'border-red-300 bg-red-100 text-red-900 ring-2 ring-red-400 ring-offset-1' : 'border-slate-100 bg-slate-50'} flex justify-between items-center text-xs font-bold">
                         <div class="flex flex-col">
                             <span>${student.id}</span>
                             <span class="text-[9px] opacity-60 font-medium">C:${student.competence} P:${student.participation}</span>
                         </div>
-                        ${hasIncompatible ? '<span title="Error d\'incompatibilitat">⚠️</span>' : ''}
+                        ${hasIncompatible ? '<span title="Error d\'incompatibilitat detectat!" class="text-base animate-pulse">⚠️</span>' : ''}
                     </div>`;
             });
             container.innerHTML = html + `</div>`;
@@ -409,23 +406,14 @@
         generateGroups();
     }
 
-    // --- MODALS ---
-    function showResetConfirm() {
-        document.getElementById('customModal').classList.add('modal-active');
-    }
-    function closeModal() {
-        document.getElementById('customModal').classList.remove('modal-active');
-    }
+    function showResetConfirm() { document.getElementById('customModal').classList.add('modal-active'); }
+    function closeModal() { document.getElementById('customModal').classList.remove('modal-active'); }
     document.getElementById('confirmResetBtn').onclick = () => {
-        students = [];
-        currentGroups = [];
-        history = [];
+        students = []; currentGroups = []; history = [];
         document.getElementById('resultsArea').classList.add('hidden');
         document.getElementById('emptyState').classList.remove('hidden');
         document.getElementById('exportBtn').classList.add('hidden');
-        updateInterface();
-        updateUndoButton();
-        closeModal();
+        updateInterface(); updateUndoButton(); closeModal();
     };
 
     function downloadTemplate() {
@@ -439,19 +427,13 @@
 
     function exportToCSV() {
         let csv = "Codi_Alumne,Grup,Participacio,Competencies,Incompatible,Absentista,Preferencies\n";
-        
         currentGroups.forEach((group, groupIdx) => {
             group.forEach(s => {
                 const partLabel = revMapping.participation[s.participation] || "";
                 const compLabel = revMapping.competence[s.competence] || "";
-                const incompStr = s.incompatible.join("-");
-                const absLabel = s.absentee ? "Si" : "No";
-                const prefStr = s.preferences.join("-");
-                
-                csv += `"${s.id}","${groupIdx + 1}","${partLabel}","${compLabel}","${incompStr}","${absLabel}","${prefStr}"\n`;
+                csv += `"${s.id}","${groupIdx + 1}","${partLabel}","${compLabel}","${s.incompatible.join("-")}","${s.absentee ? "Si" : "No"}","${s.preferences.join("-")}"\n`;
             });
         });
-
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
