@@ -133,16 +133,28 @@
     });
 
     function processCSV(text) {
-        const lines = text.split('\n');
+        // Netejar la llista actual si es puja un fitxer nou per evitar duplicats estranys
+        students = [];
+        const lines = text.split(/\r?\n/);
         let preassignedGroups = new Map();
 
         for (let i = 1; i < lines.length; i++) {
-            if (!lines[i].trim()) continue;
-            const cols = lines[i].match(/(".*?"|[^,]+|(?<=,)(?=,)|(?<=,)$)/g) || [];
+            let line = lines[i].trim();
+            if (!line) continue;
+            
+            // Regex millorada per gestionar comes dins de cometes
+            const cols = line.match(/(".*?"|[^,]+|(?<=,)(?=,)|(?<=,)$)/g) || [];
             const cleanCols = cols.map(c => c.trim().replace(/^"|"$/g, ''));
             
+            // Si la primera columna té tota la informació concatenada, la intentem separar
+            let finalId = cleanCols[0];
+            if (cleanCols.length === 1 && line.includes(';')) {
+                const parts = line.split(';');
+                finalId = parts[0];
+            }
+
             const student = createStudentObject(
-                cleanCols[0], 
+                finalId, 
                 cleanCols[1], 
                 cleanCols[2], 
                 cleanCols[3], 
@@ -150,6 +162,7 @@
                 cleanCols[5],
                 cleanCols[6] ? parseInt(cleanCols[6]) : null
             );
+            
             students.push(student);
             
             if (student.assignedGroup !== null && !isNaN(student.assignedGroup)) {
@@ -161,17 +174,22 @@
         if (preassignedGroups.size > 0) {
             currentGroups = Array.from(preassignedGroups.entries()).sort((a,b)=>a[0]-b[0]).map(e=>e[1]);
             renderGroups();
+        } else {
+            generateGroups();
         }
     }
 
     function createStudentObject(id, part, comp, incomp, abs, pref, group) {
+        // Netegem el ID per si encara porta restes de CSV
+        let cleanId = String(id).split(';')[0].replace(/^"|"$/g, '').trim();
+        
         return {
-            id: id || "Sense Nom",
+            id: cleanId || "Sense Nom",
             participation: mapping[part] || 2,
             competence: mapping[comp] || 2,
-            incompatible: incomp ? incomp.split(/[,;]/).map(x => x.trim()) : [],
+            incompatible: incomp ? String(incomp).split(/[,;]/).map(x => x.trim()) : [],
             absentee: mapping[abs] || false,
-            preferences: pref ? pref.split(/[,;]/).map(x => x.trim()) : [],
+            preferences: pref ? String(pref).split(/[,;]/).map(x => x.trim()) : [],
             assignedGroup: group
         };
     }
@@ -192,6 +210,12 @@
         students.push(student);
         document.getElementById('manualId').value = "";
         updateInterface();
+        if (currentGroups.length > 0) {
+            // Si ja hi ha grups, afegim l'alumne al grup amb menys gent
+            let minGroup = currentGroups.reduce((prev, curr) => prev.length <= curr.length ? prev : curr);
+            minGroup.push(student);
+            renderGroups();
+        }
     }
 
     function updateInterface() {
@@ -269,6 +293,7 @@
                 const hasConflict = group.some(other => student.incompatible.includes(other.id) || other.incompatible.includes(student.id));
                 const conflictClass = hasConflict ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-100 bg-slate-50 text-slate-700';
 
+                // AQUÍ ÉS ON NOMÉS MOSTREM EL student.id
                 html += `
                     <div draggable="true" 
                          ondragstart="onDragStart(event, '${student.id}', ${gIndex})"
